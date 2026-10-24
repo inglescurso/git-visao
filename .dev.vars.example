@@ -1,0 +1,10 @@
+# Senha necessaria APENAS para cadastrar/atualizar/remover repositorios (a busca e aberta)
+ADMIN_PASSWORD=sua_senha_admin_aqui
+
+# Configuracao do seu OmniRoute auto-hospedado (endpoint /v1)
+OMNIROUTE_BASE_URL=
+OMNIROUTE_API_KEY=
+OMNIROUTE_MODEL=gemini-2.5-flash
+
+# Opcional: Token do GitHub para elevar limite de requisicoes
+GITHUB_TOKEN=

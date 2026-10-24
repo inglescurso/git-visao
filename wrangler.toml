@@ -1,0 +1,13 @@
+name = "git-visao"
+main = "src/index.ts"
+compatibility_date = "2025-02-01"
+
+[vars]
+OMNIROUTE_MODEL = "gemini-2.5-flash"
+PUBLIC_APP_TITLE = "GitVisão • Catálogo de Repositórios"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "git-visao-db"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"

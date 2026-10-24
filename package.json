@@ -1,0 +1,19 @@
+{
+  "name": "git-visao",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sistema Cloudflare Workers + D1 + OmniRoute para catalogar, resumir (5 variacoes) e buscar repositorios GitHub",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply git-visao-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply git-visao-db --remote",
+    "test": "node --experimental-strip-types --test tests/worker.test.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250214.0",
+    "typescript": "^5.7.3",
+    "wrangler": "^3.109.0"
+  }
+}
