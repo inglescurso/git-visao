@@ -401,7 +401,7 @@ export async function listRepositories(
     orderBySql = 'ORDER BY full_name ASC';
   }
 
-  const limit = Math.min(Math.max(Number(filters.limit) || 100, 1), 500);
+  const limit = Math.min(Math.max(Number(filters.limit) || 1000, 1), 2000);
   const querySql = `SELECT * FROM repositories ${whereSql} ${orderBySql} LIMIT ?`;
 
   const result = await db
@@ -428,9 +428,12 @@ export async function listRepositories(
     }
   }
 
+  const globalTotal = (allStatsResult?.results ?? []).length;
+  const total = whereClauses.length > 0 ? items.length : globalTotal;
+
   return {
     items,
-    total: items.length,
+    total,
     byCategory,
     byTemplate
   };

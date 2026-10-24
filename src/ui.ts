@@ -799,7 +799,7 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
     async function loadRepos() {
       const loadingEl = document.getElementById('repos-loading');
       try {
-        const res = await fetch('/api/repos');
+        const res = await fetch('/api/repos?limit=1000');
         const data = await res.json();
         const rawList = data.items || data.repos || data.data || (Array.isArray(data) ? data : []);
         allRepos = rawList.map(normalizeRepo).filter(Boolean);

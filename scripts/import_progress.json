@@ -1,5 +1,5 @@
 {
-  "lastRunAt": "2026-10-24T19:20:08.634Z",
+  "lastRunAt": "2026-10-24T19:53:48.576Z",
   "targetUrl": "https://vision.24hs.eu.org",
   "records": {
     "browseros-ai/browseros": {
@@ -8,7 +8,7 @@
       "reason": "skipped_already_exists",
       "category": "Agentes & Automação IA",
       "stars": 14100,
-      "updatedAt": "2026-10-24T19:19:53.125Z"
+      "updatedAt": "2026-10-24T19:27:59.206Z"
     },
     "arnasdon/wacrm": {
       "status": "skipped",
@@ -16,7 +16,7 @@
       "reason": "skipped_already_exists",
       "category": "SaaS & CRM Self-Hosted",
       "stars": 2600,
-      "updatedAt": "2026-10-24T19:19:56.353Z"
+      "updatedAt": "2026-10-24T19:28:02.507Z"
     },
     "alltomatos/superkuma": {
       "status": "skipped",
@@ -24,7 +24,7 @@
       "reason": "skipped_already_exists",
       "category": "Infra, Gateways & Edge",
       "stars": 7,
-      "updatedAt": "2026-10-24T19:19:59.606Z"
+      "updatedAt": "2026-10-24T19:28:05.770Z"
     },
     "egonex-ai/understand-anything": {
       "status": "skipped",
@@ -32,7 +32,7 @@
       "reason": "skipped_already_exists",
       "category": "Agentes & Automação IA",
       "stars": 88049,
-      "updatedAt": "2026-10-24T19:20:05.422Z"
+      "updatedAt": "2026-10-24T19:28:16.835Z"
     },
     "deusdata/codebase-memory-mcp": {
       "status": "skipped",
@@ -40,7 +40,1072 @@
       "reason": "skipped_already_exists",
       "category": "Agentes & Automação IA",
       "stars": 47398,
-      "updatedAt": "2026-10-24T19:20:08.634Z"
+      "updatedAt": "2026-10-24T19:28:20.044Z"
+    },
+    "infisical/infisical": {
+      "status": "skipped",
+      "repo": "Infisical/infisical",
+      "reason": "skipped_already_exists",
+      "category": "Infra, Gateways & Edge",
+      "stars": 29972,
+      "updatedAt": "2026-10-24T19:28:23.332Z"
+    },
+    "aitorroma/38cb467602d92ca8464f34a41ec2cce0": {
+      "status": "error",
+      "repo": "aitorroma/38cb467602d92ca8464f34a41ec2cce0",
+      "error": "Repositório \"aitorroma/38cb467602d92ca8464f34a41ec2cce0\" não encontrado no GitHub (404). Verifique se ele é público.",
+      "updatedAt": "2026-10-24T19:28:11.544Z"
+    },
+    "bmad-code-org/bmad-method": {
+      "status": "success",
+      "repo": "bmad-code-org/BMAD-METHOD",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 54507,
+      "updatedAt": "2026-10-24T19:28:30.878Z"
+    },
+    "zlh-428/open-maestri": {
+      "status": "error",
+      "repo": "zlh-428/open-maestri",
+      "error": "Repositório \"zlh-428/open-maestri\" não encontrado no GitHub (404). Verifique se ele é público.",
+      "updatedAt": "2026-10-24T19:28:38.579Z"
+    },
+    "baresip/baresip": {
+      "status": "success",
+      "repo": "baresip/baresip",
+      "category": "Agentes & Automação IA",
+      "stars": 2258,
+      "updatedAt": "2026-10-24T19:28:47.170Z"
+    },
+    "iofficeai/aionui": {
+      "status": "success",
+      "repo": "iOfficeAI/AionUi",
+      "category": "Agentes & Automação IA",
+      "stars": 33743,
+      "updatedAt": "2026-10-24T19:28:55.591Z"
+    },
+    "microsoft/markitdown": {
+      "status": "success",
+      "repo": "microsoft/markitdown",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 191953,
+      "updatedAt": "2026-10-24T19:29:04.005Z"
+    },
+    "bytechefhq/bytechef": {
+      "status": "success",
+      "repo": "bytechefhq/bytechef",
+      "category": "Infra, Gateways & Edge",
+      "stars": 1047,
+      "updatedAt": "2026-10-24T19:29:12.421Z"
+    },
+    "decolua/9router": {
+      "status": "success",
+      "repo": "decolua/9router",
+      "category": "Infra, Gateways & Edge",
+      "stars": 31345,
+      "updatedAt": "2026-10-24T19:29:20.801Z"
+    },
+    "grinev/opencode-telegram-bot": {
+      "status": "success",
+      "repo": "grinev/opencode-telegram-bot",
+      "category": "Infra, Gateways & Edge",
+      "stars": 1283,
+      "updatedAt": "2026-10-24T19:29:29.511Z"
+    },
+    "evogix/evil-ollama": {
+      "status": "success",
+      "repo": "evogix/Evil-Ollama",
+      "category": "Infra, Gateways & Edge",
+      "stars": 4,
+      "updatedAt": "2026-10-24T19:29:38.066Z"
+    },
+    "studiocodeai/lya-studio-coder": {
+      "status": "success",
+      "repo": "StudioCodeAI/Lya-Studio-Coder",
+      "category": "Infra, Gateways & Edge",
+      "stars": 2,
+      "updatedAt": "2026-10-24T19:29:50.498Z"
+    },
+    "sidinsearch/superbrain": {
+      "status": "success",
+      "repo": "sidinsearch/superbrain",
+      "category": "Infra, Gateways & Edge",
+      "stars": 495,
+      "updatedAt": "2026-10-24T19:29:59.267Z"
+    },
+    "alltomatos/voicebox": {
+      "status": "success",
+      "repo": "alltomatos/voicebox",
+      "category": "Infra, Gateways & Edge",
+      "stars": 1,
+      "updatedAt": "2026-10-24T19:30:31.221Z"
+    },
+    "alltomatos/waconector": {
+      "status": "success",
+      "repo": "alltomatos/waconector",
+      "category": "Infra, Gateways & Edge",
+      "stars": 8,
+      "updatedAt": "2026-10-24T19:30:39.899Z"
+    },
+    "alltomatos/skills": {
+      "status": "success",
+      "repo": "alltomatos/skills",
+      "category": "Agentes & Automação IA",
+      "stars": 19,
+      "updatedAt": "2026-10-24T19:30:48.314Z"
+    },
+    "alltomatos/strix": {
+      "status": "success",
+      "repo": "alltomatos/strix",
+      "category": "Infra, Gateways & Edge",
+      "stars": 1,
+      "updatedAt": "2026-10-24T19:30:56.881Z"
+    },
+    "alltomatos/devops": {
+      "status": "success",
+      "repo": "alltomatos/devops",
+      "category": "Infra, Gateways & Edge",
+      "stars": 7,
+      "updatedAt": "2026-10-24T19:31:05.647Z"
+    },
+    "alltomatos/vibevoice": {
+      "status": "success",
+      "repo": "alltomatos/VibeVoice",
+      "category": "Infra, Gateways & Edge",
+      "stars": 1,
+      "updatedAt": "2026-10-24T19:31:14.265Z"
+    },
+    "alltomatos/loop": {
+      "status": "success",
+      "repo": "alltomatos/loop",
+      "category": "Agentes & Automação IA",
+      "stars": 1,
+      "updatedAt": "2026-10-24T19:31:23.022Z"
+    },
+    "drewthomasson/ebook2audiobook": {
+      "status": "success",
+      "repo": "DrewThomasson/ebook2audiobook",
+      "category": "Infra, Gateways & Edge",
+      "stars": 20400,
+      "updatedAt": "2026-10-24T19:31:31.556Z"
+    },
+    "akitaonrails/ai-memory": {
+      "status": "success",
+      "repo": "akitaonrails/ai-memory",
+      "category": "Infra, Gateways & Edge",
+      "stars": 13237,
+      "updatedAt": "2026-10-24T19:31:40.210Z"
+    },
+    "pedrofariasx/qwenproxy": {
+      "status": "success",
+      "repo": "pedrofariasx/qwenproxy",
+      "category": "Infra, Gateways & Edge",
+      "stars": 183,
+      "updatedAt": "2026-10-24T19:31:48.677Z"
+    },
+    "alltomatos/winutil": {
+      "status": "success",
+      "repo": "alltomatos/winutil",
+      "category": "Agentes & Automação IA",
+      "stars": 0,
+      "updatedAt": "2026-10-24T19:31:57.143Z"
+    },
+    "alltomatos/opencode": {
+      "status": "success",
+      "repo": "alltomatos/opencode",
+      "category": "Infra, Gateways & Edge",
+      "stars": 11,
+      "updatedAt": "2026-10-24T19:32:31.197Z"
+    },
+    "luispdoesai/openfunnel": {
+      "status": "success",
+      "repo": "luispdoesai/openFunnel",
+      "category": "Infra, Gateways & Edge",
+      "stars": 23,
+      "updatedAt": "2026-10-24T19:32:39.691Z"
+    },
+    "dfn-master/deepseek-harness": {
+      "status": "success",
+      "repo": "DFN-master/deepseek-harness",
+      "category": "Agentes & Automação IA",
+      "stars": 0,
+      "updatedAt": "2026-10-24T19:32:48.222Z"
+    },
+    "primeintellect-ai/prime-agent": {
+      "status": "success",
+      "repo": "PrimeIntellect-ai/prime-agent",
+      "category": "Agentes & Automação IA",
+      "stars": 22306,
+      "updatedAt": "2026-10-24T19:32:56.616Z"
+    },
+    "muriel-gasparini/antigravity-account-switcher": {
+      "status": "success",
+      "repo": "Muriel-Gasparini/antigravity-account-switcher",
+      "category": "Infra, Gateways & Edge",
+      "stars": 17,
+      "updatedAt": "2026-10-24T19:33:05.030Z"
+    },
+    "asamassekou10/ship-safe": {
+      "status": "success",
+      "repo": "asamassekou10/ship-safe",
+      "category": "Agentes & Automação IA",
+      "stars": 862,
+      "updatedAt": "2026-10-24T19:33:13.422Z"
+    },
+    "magnitudedev/magnitude": {
+      "status": "success",
+      "repo": "magnitudedev/magnitude",
+      "category": "Agentes & Automação IA",
+      "stars": 7318,
+      "updatedAt": "2026-10-24T19:33:22.321Z"
+    },
+    "mdigitalbh81/secops-orchestrator": {
+      "status": "success",
+      "repo": "mdigitalbh81/secops-orchestrator",
+      "category": "Infra, Gateways & Edge",
+      "stars": 6,
+      "updatedAt": "2026-10-24T19:33:30.768Z"
+    },
+    "can1357/oh-my-pi": {
+      "status": "success",
+      "repo": "can1357/oh-my-pi",
+      "category": "Agentes & Automação IA",
+      "stars": 36464,
+      "updatedAt": "2026-10-24T19:33:39.583Z"
+    },
+    "tashfeenahmed/freellmapi": {
+      "status": "success",
+      "repo": "tashfeenahmed/freellmapi",
+      "category": "Infra, Gateways & Edge",
+      "stars": 40862,
+      "updatedAt": "2026-10-24T19:33:48.204Z"
+    },
+    "multica-ai/multica": {
+      "status": "success",
+      "repo": "multica-ai/multica",
+      "category": "Infra, Gateways & Edge",
+      "stars": 53713,
+      "updatedAt": "2026-10-24T19:33:56.534Z"
+    },
+    "rlucio01/whisper-app": {
+      "status": "success",
+      "repo": "rlucio01/whisper-app",
+      "category": "Infra, Gateways & Edge",
+      "stars": 5,
+      "updatedAt": "2026-10-24T19:34:04.996Z"
+    },
+    "siddharthvaddem/openscreen": {
+      "status": "success",
+      "repo": "siddharthvaddem/openscreen",
+      "category": "Agentes & Automação IA",
+      "stars": 39922,
+      "updatedAt": "2026-10-24T19:34:13.619Z"
+    },
+    "dashenbibi/tutorial-generator": {
+      "status": "success",
+      "repo": "dashenbibi/tutorial-generator",
+      "category": "Infra, Gateways & Edge",
+      "stars": 15,
+      "updatedAt": "2026-10-24T19:34:22.011Z"
+    },
+    "martian0x80/framepipe": {
+      "status": "success",
+      "repo": "martian0x80/framepipe",
+      "category": "Agentes & Automação IA",
+      "stars": 45,
+      "updatedAt": "2026-10-24T19:34:30.378Z"
+    },
+    "remotion-dev/remotion": {
+      "status": "success",
+      "repo": "remotion-dev/remotion",
+      "category": "Agentes & Automação IA",
+      "stars": 67071,
+      "updatedAt": "2026-10-24T19:34:39.009Z"
+    },
+    "openhands/openhands": {
+      "status": "success",
+      "repo": "OpenHands/OpenHands",
+      "category": "Infra, Gateways & Edge",
+      "stars": 91739,
+      "updatedAt": "2026-10-24T19:34:47.701Z"
+    },
+    "browser-use/browser-use": {
+      "status": "success",
+      "repo": "browser-use/browser-use",
+      "category": "Agentes & Automação IA",
+      "stars": 119048,
+      "updatedAt": "2026-10-24T19:34:56.250Z"
+    },
+    "alexsjones/llmfit": {
+      "status": "success",
+      "repo": "AlexsJones/llmfit",
+      "category": "Infra, Gateways & Edge",
+      "stars": 38339,
+      "updatedAt": "2026-10-24T19:35:04.889Z"
+    },
+    "afonsoft/skills": {
+      "status": "success",
+      "repo": "afonsoft/skills",
+      "category": "Agentes & Automação IA",
+      "stars": 13,
+      "updatedAt": "2026-10-24T19:35:13.431Z"
+    },
+    "donnemartin/system-design-primer": {
+      "status": "success",
+      "repo": "donnemartin/system-design-primer",
+      "category": "Apps & Produtividade",
+      "stars": 375449,
+      "updatedAt": "2026-10-24T19:35:22.664Z"
+    },
+    "sandeco/reversa": {
+      "status": "success",
+      "repo": "sandeco/reversa",
+      "category": "Infra, Gateways & Edge",
+      "stars": 1788,
+      "updatedAt": "2026-10-24T19:35:31.146Z"
+    },
+    "affaan-m/ecc": {
+      "status": "success",
+      "repo": "affaan-m/ecc",
+      "category": "Agentes & Automação IA",
+      "stars": 287944,
+      "updatedAt": "2026-10-24T19:35:39.757Z"
+    },
+    "webadderallorg/recordly": {
+      "status": "success",
+      "repo": "webadderallorg/recordly",
+      "category": "Agentes & Automação IA",
+      "stars": 35054,
+      "updatedAt": "2026-10-24T19:35:48.191Z"
+    },
+    "anomalyco/opencode": {
+      "status": "success",
+      "repo": "anomalyco/opencode",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 221027,
+      "updatedAt": "2026-10-24T19:35:56.566Z"
+    },
+    "stablyai/orca": {
+      "status": "success",
+      "repo": "stablyai/orca",
+      "category": "Agentes & Automação IA",
+      "stars": 104803,
+      "updatedAt": "2026-10-24T19:36:04.980Z"
+    },
+    "taruma/sceneflow": {
+      "status": "success",
+      "repo": "taruma/SceneFlow",
+      "category": "Agentes & Automação IA",
+      "stars": 375,
+      "updatedAt": "2026-10-24T19:36:13.502Z"
+    },
+    "erickythierry/transcreveapi": {
+      "status": "success",
+      "repo": "erickythierry/transcreveAPI",
+      "category": "Infra, Gateways & Edge",
+      "stars": 54,
+      "updatedAt": "2026-10-24T19:36:47.662Z"
+    },
+    "brasil-fiscal/nfe": {
+      "status": "success",
+      "repo": "brasil-fiscal/nfe",
+      "category": "Libs, SDKs & CLI Dev",
+      "stars": 31,
+      "updatedAt": "2026-10-24T19:36:56.196Z"
+    },
+    "mahanaicoach/google-maps-scraper-kit": {
+      "status": "success",
+      "repo": "Mahanaicoach/google-maps-scraper-kit",
+      "category": "Infra, Gateways & Edge",
+      "stars": 1849,
+      "updatedAt": "2026-10-24T19:37:04.475Z"
+    },
+    "insforge/insforge": {
+      "status": "success",
+      "repo": "InsForge/InsForge",
+      "category": "Infra, Gateways & Edge",
+      "stars": 13181,
+      "updatedAt": "2026-10-24T19:37:12.738Z"
+    },
+    "tt-a1i/archify": {
+      "status": "success",
+      "repo": "tt-a1i/archify",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 88687,
+      "updatedAt": "2026-10-24T19:37:21.031Z"
+    },
+    "openvinotoolkit/openvino": {
+      "status": "success",
+      "repo": "openvinotoolkit/openvino",
+      "category": "Infra, Gateways & Edge",
+      "stars": 11062,
+      "updatedAt": "2026-10-24T19:37:29.392Z"
+    },
+    "openvinotoolkit/openvino.genai": {
+      "status": "success",
+      "repo": "openvinotoolkit/openvino.genai",
+      "category": "Agentes & Automação IA",
+      "stars": 603,
+      "updatedAt": "2026-10-24T19:37:37.813Z"
+    },
+    "engenheirodevideo/get-brolls": {
+      "status": "success",
+      "repo": "engenheirodevideo/get-brolls",
+      "category": "Agentes & Automação IA",
+      "stars": 166,
+      "updatedAt": "2026-10-24T19:37:46.365Z"
+    },
+    "agentesiaconceitto/usbrain": {
+      "status": "success",
+      "repo": "AgentesIAConceitto/usbrain",
+      "category": "Agentes & Automação IA",
+      "stars": 1,
+      "updatedAt": "2026-10-24T19:37:54.777Z"
+    },
+    "mintplex-labs/anything-llm": {
+      "status": "success",
+      "repo": "Mintplex-Labs/anything-llm",
+      "category": "Infra, Gateways & Edge",
+      "stars": 67516,
+      "updatedAt": "2026-10-24T19:38:03.806Z"
+    },
+    "vinzdg/codenotch": {
+      "status": "success",
+      "repo": "vinzdg/codenotch",
+      "category": "Infra, Gateways & Edge",
+      "stars": 2905,
+      "updatedAt": "2026-10-24T19:38:12.330Z"
+    },
+    "yashab-cyber/hackgpt": {
+      "status": "success",
+      "repo": "yashab-cyber/HackGpt",
+      "category": "Infra, Gateways & Edge",
+      "stars": 1284,
+      "updatedAt": "2026-10-24T19:38:21.223Z"
+    },
+    "salesagility/suitecrm": {
+      "status": "success",
+      "repo": "salesagility/SuiteCRM",
+      "category": "Infra, Gateways & Edge",
+      "stars": 5806,
+      "updatedAt": "2026-10-24T19:38:29.985Z"
+    },
+    "twentyhq/twenty": {
+      "status": "success",
+      "repo": "twentyhq/twenty",
+      "category": "Infra, Gateways & Edge",
+      "stars": 59646,
+      "updatedAt": "2026-10-24T19:38:38.435Z"
+    },
+    "vectorize-io/hindsight": {
+      "status": "success",
+      "repo": "vectorize-io/hindsight",
+      "category": "Infra, Gateways & Edge",
+      "stars": 53405,
+      "updatedAt": "2026-10-24T19:38:46.947Z"
+    },
+    "caiomioto2/pluggy-mcp-starter": {
+      "status": "success",
+      "repo": "caiomioto2/pluggy-mcp-starter",
+      "category": "Infra, Gateways & Edge",
+      "stars": 6,
+      "updatedAt": "2026-10-24T19:38:55.447Z"
+    },
+    "heygen-com/hyperframes": {
+      "status": "success",
+      "repo": "heygen-com/hyperframes",
+      "category": "Agentes & Automação IA",
+      "stars": 71378,
+      "updatedAt": "2026-10-24T19:39:03.978Z"
+    },
+    "tamaratran/fast-jev-compaction": {
+      "status": "success",
+      "repo": "tamaratran/fast-jev-compaction",
+      "category": "Agentes & Automação IA",
+      "stars": 7753,
+      "updatedAt": "2026-10-24T19:39:12.487Z"
+    },
+    "webmachinelearning/webmcp": {
+      "status": "success",
+      "repo": "webmachinelearning/webmcp",
+      "category": "Infra, Gateways & Edge",
+      "stars": 4735,
+      "updatedAt": "2026-10-24T19:39:20.943Z"
+    },
+    "leninejunior/engrene-memory-bridge": {
+      "status": "success",
+      "repo": "leninejunior/engrene-memory-bridge",
+      "category": "Infra, Gateways & Edge",
+      "stars": 14,
+      "updatedAt": "2026-10-24T19:39:29.442Z"
+    },
+    "samucamg/veroroute-edge": {
+      "status": "skipped",
+      "repo": "samucamg/veroroute-edge",
+      "reason": "skipped_already_exists",
+      "category": "Infra, Gateways & Edge",
+      "stars": 12,
+      "updatedAt": "2026-10-24T19:39:34.697Z"
+    },
+    "vxcontrol/pentagi": {
+      "status": "success",
+      "repo": "vxcontrol/pentagi",
+      "category": "Infra, Gateways & Edge",
+      "stars": 32290,
+      "updatedAt": "2026-10-24T19:39:41.618Z"
+    },
+    "dzhng/jevgrep": {
+      "status": "success",
+      "repo": "dzhng/jevgrep",
+      "category": "Infra, Gateways & Edge",
+      "stars": 2889,
+      "updatedAt": "2026-10-24T19:39:50.059Z"
+    },
+    "shadowhackrs/gmail-account-creator": {
+      "status": "success",
+      "repo": "ShadowHackrs/gmail-account-creator",
+      "category": "Infra, Gateways & Edge",
+      "stars": 5714,
+      "updatedAt": "2026-10-24T19:39:58.835Z"
+    },
+    "mbarizao/paleonia": {
+      "status": "success",
+      "repo": "mbarizao/PaleonIA",
+      "category": "Infra, Gateways & Edge",
+      "stars": 4,
+      "updatedAt": "2026-10-24T19:40:07.287Z"
+    },
+    "lampese/codex-switcher": {
+      "status": "success",
+      "repo": "Lampese/codex-switcher",
+      "category": "Infra, Gateways & Edge",
+      "stars": 906,
+      "updatedAt": "2026-10-24T19:40:15.901Z"
+    },
+    "produtoramaxvision/decktech": {
+      "status": "success",
+      "repo": "produtoramaxvision/DeckTech",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 5,
+      "updatedAt": "2026-10-24T19:40:24.333Z"
+    },
+    "fastapi/fastapi": {
+      "status": "success",
+      "repo": "fastapi/fastapi",
+      "category": "Infra, Gateways & Edge",
+      "stars": 104084,
+      "updatedAt": "2026-10-24T19:40:32.776Z"
+    },
+    "obra/superpowers": {
+      "status": "success",
+      "repo": "obra/superpowers",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 304585,
+      "updatedAt": "2026-10-24T19:40:41.192Z"
+    },
+    "muriel-gasparini/ban4life": {
+      "status": "success",
+      "repo": "Muriel-Gasparini/ban4life",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 5,
+      "updatedAt": "2026-10-24T19:40:49.728Z"
+    },
+    "gitroomhq/postiz-app": {
+      "status": "success",
+      "repo": "gitroomhq/postiz-app",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 37720,
+      "updatedAt": "2026-10-24T19:40:58.123Z"
+    },
+    "heyputer/builder": {
+      "status": "success",
+      "repo": "HeyPuter/builder",
+      "category": "Infra, Gateways & Edge",
+      "stars": 298,
+      "updatedAt": "2026-10-24T19:41:06.506Z"
+    },
+    "muriel-gasparini/dya": {
+      "status": "success",
+      "repo": "Muriel-Gasparini/dya",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 3,
+      "updatedAt": "2026-10-24T19:41:15.221Z"
+    },
+    "louis-cfm/coucou": {
+      "status": "success",
+      "repo": "Louis-CFM/coucou",
+      "category": "Infra, Gateways & Edge",
+      "stars": 6359,
+      "updatedAt": "2026-10-24T19:41:23.792Z"
+    },
+    "ricardopenadev/deskpanel": {
+      "status": "success",
+      "repo": "RicardoPenaDev/DeskPanel",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 8,
+      "updatedAt": "2026-10-24T19:41:58.799Z"
+    },
+    "devton/motion-director": {
+      "status": "success",
+      "repo": "devton/motion-director",
+      "category": "Infra, Gateways & Edge",
+      "stars": 23,
+      "updatedAt": "2026-10-24T19:42:07.480Z"
+    },
+    "aitorroma/nimdeploy": {
+      "status": "success",
+      "repo": "aitorroma/nimdeploy",
+      "category": "Infra, Gateways & Edge",
+      "stars": 7,
+      "updatedAt": "2026-10-24T19:42:15.966Z"
+    },
+    "morluto/rea": {
+      "status": "success",
+      "repo": "morluto/rea",
+      "category": "Agentes & Automação IA",
+      "stars": 377781,
+      "updatedAt": "2026-10-24T19:42:24.434Z"
+    },
+    "gtai-1/flow-mcp": {
+      "status": "success",
+      "repo": "GTAI-1/flow-mcp",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 304,
+      "updatedAt": "2026-10-24T19:42:32.880Z"
+    },
+    "ffroliva/gflow-cli": {
+      "status": "success",
+      "repo": "ffroliva/gflow-cli",
+      "category": "Infra, Gateways & Edge",
+      "stars": 333,
+      "updatedAt": "2026-10-24T19:42:41.460Z"
+    },
+    "mnfst/awesome-free-llm-apis": {
+      "status": "success",
+      "repo": "mnfst/awesome-free-llm-apis",
+      "category": "Infra, Gateways & Edge",
+      "stars": 11177,
+      "updatedAt": "2026-10-24T19:42:49.958Z"
+    },
+    "nandhakishorm/laya": {
+      "status": "success",
+      "repo": "NandhaKishorM/laya",
+      "category": "Infra, Gateways & Edge",
+      "stars": 34188,
+      "updatedAt": "2026-10-24T19:42:58.487Z"
+    },
+    "ghostpad/ghostpad": {
+      "status": "success",
+      "repo": "ghostpad/ghostpad",
+      "category": "Agentes & Automação IA",
+      "stars": 33,
+      "updatedAt": "2026-10-24T19:43:06.921Z"
+    },
+    "storytold/craft-launcher": {
+      "status": "success",
+      "repo": "storytold/craft-launcher",
+      "category": "Libs, SDKs & CLI Dev",
+      "stars": 3980,
+      "updatedAt": "2026-10-24T19:43:15.350Z"
+    },
+    "yc-software/qm": {
+      "status": "success",
+      "repo": "yc-software/qm",
+      "category": "Agentes & Automação IA",
+      "stars": 15527,
+      "updatedAt": "2026-10-24T19:43:23.834Z"
+    },
+    "andyrewlee/awesome-agent-orchestrators": {
+      "status": "success",
+      "repo": "andyrewlee/awesome-agent-orchestrators",
+      "category": "Infra, Gateways & Edge",
+      "stars": 2267,
+      "updatedAt": "2026-10-24T19:43:32.273Z"
+    },
+    "storytold/soundcraft": {
+      "status": "success",
+      "repo": "storytold/soundcraft",
+      "category": "Agentes & Automação IA",
+      "stars": 3691,
+      "updatedAt": "2026-10-24T19:43:41.083Z"
+    },
+    "opencut-app/opencut": {
+      "status": "success",
+      "repo": "OpenCut-app/OpenCut",
+      "category": "Agentes & Automação IA",
+      "stars": 96007,
+      "updatedAt": "2026-10-24T19:43:49.543Z"
+    },
+    "storytold/vectorcraft": {
+      "status": "success",
+      "repo": "storytold/vectorcraft",
+      "category": "Agentes & Automação IA",
+      "stars": 10595,
+      "updatedAt": "2026-10-24T19:43:57.838Z"
+    },
+    "zhaoxuya520/reverse-skill": {
+      "status": "success",
+      "repo": "zhaoxuya520/reverse-skill",
+      "category": "Infra, Gateways & Edge",
+      "stars": 43216,
+      "updatedAt": "2026-10-24T19:44:06.307Z"
+    },
+    "crmne/spotifast": {
+      "status": "success",
+      "repo": "crmne/spotifast",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 9107,
+      "updatedAt": "2026-10-24T19:44:14.651Z"
+    },
+    "thu-maic/openmaic": {
+      "status": "success",
+      "repo": "THU-MAIC/OpenMAIC",
+      "category": "Infra, Gateways & Edge",
+      "stars": 41371,
+      "updatedAt": "2026-10-24T19:44:24.725Z"
+    },
+    "crmne/zapfast": {
+      "status": "success",
+      "repo": "crmne/zapfast",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 2182,
+      "updatedAt": "2026-10-24T19:44:33.776Z"
+    },
+    "afonsoft/open-webui": {
+      "status": "success",
+      "repo": "afonsoft/open-webui",
+      "category": "Infra, Gateways & Edge",
+      "stars": 7,
+      "updatedAt": "2026-10-24T19:44:42.985Z"
+    },
+    "daslearning-org/opensms": {
+      "status": "success",
+      "repo": "daslearning-org/OpenSMS",
+      "category": "Infra, Gateways & Edge",
+      "stars": 322,
+      "updatedAt": "2026-10-24T19:44:52.196Z"
+    },
+    "zerolu/awesome-seedance": {
+      "status": "success",
+      "repo": "ZeroLu/awesome-seedance",
+      "category": "Infra, Gateways & Edge",
+      "stars": 2781,
+      "updatedAt": "2026-10-24T19:45:00.943Z"
+    },
+    "mrifqidaffaaditya/wa-akg": {
+      "status": "success",
+      "repo": "mrifqidaffaaditya/WA-AKG",
+      "category": "Infra, Gateways & Edge",
+      "stars": 761,
+      "updatedAt": "2026-10-24T19:45:09.732Z"
+    },
+    "pleaseprompto/notebooklm-skill": {
+      "status": "success",
+      "repo": "PleasePrompto/notebooklm-skill",
+      "category": "Infra, Gateways & Edge",
+      "stars": 7785,
+      "updatedAt": "2026-10-24T19:45:18.161Z"
+    },
+    "google-research/harness2": {
+      "status": "success",
+      "repo": "google-research/harness2",
+      "category": "Infra, Gateways & Edge",
+      "stars": 19035,
+      "updatedAt": "2026-10-24T19:45:26.735Z"
+    },
+    "jacob-bd/gemini-notebook-mcp-cli": {
+      "status": "success",
+      "repo": "jacob-bd/gemini-notebook-mcp-cli",
+      "category": "Infra, Gateways & Edge",
+      "stars": 6389,
+      "updatedAt": "2026-10-24T19:45:35.462Z"
+    },
+    "lfnovo/open-notebook": {
+      "status": "success",
+      "repo": "lfnovo/open-notebook",
+      "category": "Infra, Gateways & Edge",
+      "stars": 40539,
+      "updatedAt": "2026-10-24T19:45:44.151Z"
+    },
+    "coplaydev/unity-mcp": {
+      "status": "success",
+      "repo": "CoplayDev/unity-mcp",
+      "category": "Agentes & Automação IA",
+      "stars": 15378,
+      "updatedAt": "2026-10-24T19:45:52.553Z"
+    },
+    "nationalsecurityagency/ghidra": {
+      "status": "success",
+      "repo": "NationalSecurityAgency/ghidra",
+      "category": "Libs, SDKs & CLI Dev",
+      "stars": 93928,
+      "updatedAt": "2026-10-24T19:46:01.059Z"
+    },
+    "msitarzewski/agency-agents": {
+      "status": "success",
+      "repo": "msitarzewski/agency-agents",
+      "category": "Agentes & Automação IA",
+      "stars": 163679,
+      "updatedAt": "2026-10-24T19:46:09.445Z"
+    },
+    "google/artemis": {
+      "status": "success",
+      "repo": "google/artemis",
+      "category": "Agentes & Automação IA",
+      "stars": 14379,
+      "updatedAt": "2026-10-24T19:46:17.961Z"
+    },
+    "dietrichgebert/ponytail": {
+      "status": "success",
+      "repo": "DietrichGebert/ponytail",
+      "category": "Agentes & Automação IA",
+      "stars": 175424,
+      "updatedAt": "2026-10-24T19:46:26.373Z"
+    },
+    "gathin23/cleanyourtv": {
+      "status": "success",
+      "repo": "Gathin23/cleanyourtv",
+      "category": "Agentes & Automação IA",
+      "stars": 31221,
+      "updatedAt": "2026-10-24T19:46:34.767Z"
+    },
+    "agricidaniel/claude-ads": {
+      "status": "success",
+      "repo": "AgriciDaniel/claude-ads",
+      "category": "Infra, Gateways & Edge",
+      "stars": 10377,
+      "updatedAt": "2026-10-24T19:47:09.712Z"
+    },
+    "copilotkit/opendots": {
+      "status": "success",
+      "repo": "CopilotKit/OpenDots",
+      "category": "Infra, Gateways & Edge",
+      "stars": 5968,
+      "updatedAt": "2026-10-24T19:47:18.043Z"
+    },
+    "aldinokemal/go-whatsapp-web-multidevice": {
+      "status": "success",
+      "repo": "aldinokemal/go-whatsapp-web-multidevice",
+      "category": "Infra, Gateways & Edge",
+      "stars": 4956,
+      "updatedAt": "2026-10-24T19:47:26.401Z"
+    },
+    "muriel-gasparini/sourcemap-downloader": {
+      "status": "success",
+      "repo": "Muriel-Gasparini/sourcemap-downloader",
+      "category": "Infra, Gateways & Edge",
+      "stars": 4,
+      "updatedAt": "2026-10-24T19:47:34.817Z"
+    },
+    "cheaper-inference/omniroute": {
+      "status": "success",
+      "repo": "cheaper-inference/OmniRoute",
+      "category": "Infra, Gateways & Edge",
+      "stars": 80701,
+      "updatedAt": "2026-10-24T19:47:43.469Z"
+    },
+    "ctresb/leis": {
+      "status": "success",
+      "repo": "ctresb/leis",
+      "category": "Infra, Gateways & Edge",
+      "stars": 1679,
+      "updatedAt": "2026-10-24T19:47:52.105Z"
+    },
+    "mcp-brasil/mcp-brasil": {
+      "status": "success",
+      "repo": "mcp-brasil/mcp-brasil",
+      "category": "Infra, Gateways & Edge",
+      "stars": 1826,
+      "updatedAt": "2026-10-24T19:48:00.563Z"
+    },
+    "garrytan/gbrain": {
+      "status": "success",
+      "repo": "garrytan/gbrain",
+      "category": "Infra, Gateways & Edge",
+      "stars": 31166,
+      "updatedAt": "2026-10-24T19:48:09.137Z"
+    },
+    "debpalash/voicestudio": {
+      "status": "success",
+      "repo": "debpalash/voicestudio",
+      "category": "Infra, Gateways & Edge",
+      "stars": 84690,
+      "updatedAt": "2026-10-24T19:48:17.595Z"
+    },
+    "github/codeql": {
+      "status": "success",
+      "repo": "github/codeql",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 10244,
+      "updatedAt": "2026-10-24T19:48:26.096Z"
+    },
+    "hkuds/vibe-trading": {
+      "status": "success",
+      "repo": "HKUDS/Vibe-Trading",
+      "category": "Agentes & Automação IA",
+      "stars": 36531,
+      "updatedAt": "2026-10-24T19:48:35.181Z"
+    },
+    "shiaho777/web-to-app": {
+      "status": "success",
+      "repo": "shiaho777/web-to-app",
+      "category": "Agentes & Automação IA",
+      "stars": 7029,
+      "updatedAt": "2026-10-24T19:48:43.665Z"
+    },
+    "rafacpti23/orca-control-skill": {
+      "status": "success",
+      "repo": "rafacpti23/orca-control-skill",
+      "category": "Infra, Gateways & Edge",
+      "stars": 2,
+      "updatedAt": "2026-10-24T19:48:52.168Z"
+    },
+    "koala73/worldmonitor": {
+      "status": "success",
+      "repo": "koala73/worldmonitor",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 89422,
+      "updatedAt": "2026-10-24T19:49:00.596Z"
+    },
+    "max-sixty/worktrunk": {
+      "status": "success",
+      "repo": "max-sixty/worktrunk",
+      "category": "Infra, Gateways & Edge",
+      "stars": 9451,
+      "updatedAt": "2026-10-24T19:49:08.999Z"
+    },
+    "nousresearch/hermes-agent": {
+      "status": "success",
+      "repo": "nousresearch/hermes-agent",
+      "category": "Infra, Gateways & Edge",
+      "stars": 256757,
+      "updatedAt": "2026-10-24T19:49:17.768Z"
+    },
+    "tauricresearch/tradingagents": {
+      "status": "success",
+      "repo": "TauricResearch/TradingAgents",
+      "category": "Infra, Gateways & Edge",
+      "stars": 113619,
+      "updatedAt": "2026-10-24T19:49:26.488Z"
+    },
+    "actus7/mousex": {
+      "status": "success",
+      "repo": "actus7/mousex",
+      "category": "Infra, Gateways & Edge",
+      "stars": 3,
+      "updatedAt": "2026-10-24T19:49:59.099Z"
+    },
+    "anthropics/claude-code": {
+      "status": "success",
+      "repo": "anthropics/claude-code",
+      "category": "Agentes & Automação IA",
+      "stars": 153273,
+      "updatedAt": "2026-10-24T19:50:08.351Z"
+    },
+    "anthropics/skills": {
+      "status": "success",
+      "repo": "anthropics/skills",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 183477,
+      "updatedAt": "2026-10-24T19:50:17.006Z"
+    },
+    "cloudflare/security-audit-skill": {
+      "status": "success",
+      "repo": "cloudflare/security-audit-skill",
+      "category": "Infra, Gateways & Edge",
+      "stars": 44055,
+      "updatedAt": "2026-10-24T19:50:25.935Z"
+    },
+    "impa365/setupimpa": {
+      "status": "success",
+      "repo": "impa365/setupimpa",
+      "category": "Infra, Gateways & Edge",
+      "stars": 0,
+      "updatedAt": "2026-10-24T19:50:34.441Z"
+    },
+    "snailsploit/claude-red": {
+      "status": "success",
+      "repo": "SnailSploit/Claude-Red",
+      "category": "Agentes & Automação IA",
+      "stars": 8820,
+      "updatedAt": "2026-10-24T19:50:51.031Z"
+    },
+    "openai/whisper": {
+      "status": "success",
+      "repo": "openai/whisper",
+      "category": "Libs, SDKs & CLI Dev",
+      "stars": 111193,
+      "updatedAt": "2026-10-24T19:51:07.091Z"
+    },
+    "cjpais/handy": {
+      "status": "success",
+      "repo": "cjpais/Handy",
+      "category": "Apps & Produtividade",
+      "stars": 34537,
+      "updatedAt": "2026-10-24T19:51:25.422Z"
+    },
+    "sato-note/reverse-engineer-ai-video-tutorial": {
+      "status": "success",
+      "repo": "sato-note/reverse-engineer-ai-video-tutorial",
+      "category": "Agentes & Automação IA",
+      "stars": 1,
+      "updatedAt": "2026-10-24T19:51:41.742Z"
+    },
+    "paldom/video-to-skill": {
+      "status": "success",
+      "repo": "paldom/video-to-skill",
+      "category": "Agentes & Automação IA",
+      "stars": 1,
+      "updatedAt": "2026-10-24T19:51:59.671Z"
+    },
+    "jona/scrub-cli": {
+      "status": "success",
+      "repo": "jona/scrub-cli",
+      "category": "Agentes & Automação IA",
+      "stars": 2,
+      "updatedAt": "2026-10-24T19:52:18.696Z"
+    },
+    "melgarafael/deskcommcrm": {
+      "status": "success",
+      "repo": "melgarafael/DeskcommCRM",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 4836,
+      "updatedAt": "2026-10-24T19:52:37.226Z"
+    },
+    "data-privacy-stack/presidio": {
+      "status": "success",
+      "repo": "data-privacy-stack/presidio",
+      "category": "Infra, Gateways & Edge",
+      "stars": 11491,
+      "updatedAt": "2026-10-24T19:52:54.971Z"
+    },
+    "deskflow/deskflow": {
+      "status": "success",
+      "repo": "deskflow/deskflow",
+      "category": "Apps & Produtividade",
+      "stars": 30110,
+      "updatedAt": "2026-10-24T19:53:10.858Z"
+    },
+    "samucamg/gemini-chat-overdrive": {
+      "status": "skipped",
+      "repo": "samucamg/gemini-chat-overdrive",
+      "reason": "skipped_already_exists",
+      "category": "Agentes & Automação IA",
+      "stars": 5,
+      "updatedAt": "2026-10-24T19:53:16.111Z"
+    },
+    "ruvnet/ruflo": {
+      "status": "success",
+      "repo": "ruvnet/ruflo",
+      "category": "Agentes & Automação IA",
+      "stars": 78990,
+      "updatedAt": "2026-10-24T19:53:30.296Z"
+    },
+    "crom-org/kdenlive-mcp-plus": {
+      "status": "success",
+      "repo": "crom-org/kdenlive-mcp-plus",
+      "category": "Agentes & Automação IA",
+      "stars": 4,
+      "updatedAt": "2026-10-24T19:53:48.576Z"
     }
   }
 }
