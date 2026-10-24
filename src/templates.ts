@@ -19,11 +19,11 @@ export const TEMPLATE_VARIATIONS: Record<TemplateType, TemplateMetadata> = {
     label: '1. Agentes & Automações de IA',
     badgeEmoji: '🤖',
     defaultCategory: 'Agentes & Automação IA',
-    featureLeadIn: 'Ele funciona integrado ao seu fluxo e pode:',
-    scenarioHeader: '🧠 PENSE ASSIM:',
-    stepsLeadIn: 'E o agente pode:',
-    killerHeader: '🤯 A parte mais interessante?',
-    summaryHeader: '📌 RESUMINDO',
+    featureLeadIn: '🤖 O que seu agente passa a fazer por você:',
+    scenarioHeader: '🧠 PENSE ASSIM (COMO VOCÊ PEDE AO AGENTE):',
+    stepsLeadIn: 'E o agente executa na prática:',
+    killerHeader: '🤯 O pulo do gato na automação?',
+    summaryHeader: '📌 VALE A PENA PARA QUEM:',
     description: 'Focado em agentes autônomos, MCPs, assistentes e automações inteligentes.'
   },
   'self-hosted-saas': {
@@ -31,11 +31,11 @@ export const TEMPLATE_VARIATIONS: Record<TemplateType, TemplateMetadata> = {
     label: '2. Sistema Self-Hosted / SaaS Open Source',
     badgeEmoji: '🏢',
     defaultCategory: 'SaaS & CRM Self-Hosted',
-    featureLeadIn: 'Ele faz, por exemplo:',
-    scenarioHeader: '🧠 PENSE ASSIM:',
-    stepsLeadIn: 'E a automação pode:',
-    killerHeader: '🔓 O que muda o jogo (Zero Mensalidade)?',
-    summaryHeader: '📌 RESUMINDO',
+    featureLeadIn: '🏢 O que ele entrega pronto pra sua operação:',
+    scenarioHeader: '💰 PENSE NA ECONOMIA (E NA LIBERDADE):',
+    stepsLeadIn: 'E o sistema orquestra sozinho:',
+    killerHeader: '🔓 O que muda o jogo (Adeus Mensalidade em Dólar)?',
+    summaryHeader: '📌 QUEM DEVERIA RODAR ISSO AMANHÃ:',
     description: 'Ideal para CRMs, ERPs, painéis de atendimento e substitutos open source de SaaS pagos.'
   },
   'infra-gateway': {
@@ -43,11 +43,11 @@ export const TEMPLATE_VARIATIONS: Record<TemplateType, TemplateMetadata> = {
     label: '3. Infraestrutura / Gateway / DevOps',
     badgeEmoji: '🔀',
     defaultCategory: 'Infra, Gateways & Edge',
-    featureLeadIn: 'Ele faz por você:',
-    scenarioHeader: '🧠 PENSE ASSIM:',
-    stepsLeadIn: 'E o gateway pode:',
-    killerHeader: '🛡️ O pulo do gato na arquitetura?',
-    summaryHeader: '📌 RESUMINDO',
+    featureLeadIn: '🛡️ O que ele segura nos bastidores da sua stack:',
+    scenarioHeader: '⚙️ CENÁRIO REAL DE PRODUÇÃO:',
+    stepsLeadIn: 'E a infraestrutura responde no milissegundo:',
+    killerHeader: '🛡️ A sacada genial de arquitetura?',
+    summaryHeader: '📌 INDISPENSÁVEL PARA QUEM:',
     description: 'Para gateways de IA, proxies, Workers, Docker e redes.'
   },
   'app-tool': {
@@ -55,11 +55,11 @@ export const TEMPLATE_VARIATIONS: Record<TemplateType, TemplateMetadata> = {
     label: '4. App / Ferramenta Pronta (Desktop/Web)',
     badgeEmoji: '🖥️',
     defaultCategory: 'Apps & Produtividade',
-    featureLeadIn: 'O que ele entrega pronto para usar:',
-    scenarioHeader: '⚡ NA PRÁTICA, VOCÊ FAZ ASSIM:',
-    stepsLeadIn: 'E a ferramenta faz:',
-    killerHeader: '💡 O grande diferencial?',
-    summaryHeader: '📌 RESUMINDO',
+    featureLeadIn: '⚡ O que ele resolve no seu dia a dia com zero atrito:',
+    scenarioHeader: '🎯 VEJA A PRATICIDADE NO USO REAL:',
+    stepsLeadIn: 'E o aplicativo resolve em poucos cliques:',
+    killerHeader: '💡 Por que ele supera alternativas fechadas e pesadas?',
+    summaryHeader: '📌 PERFEITO PARA QUEM:',
     description: 'Para aplicativos desktop, extensões de navegador, editores e utilitários prontos.'
   },
   'dev-lib-cli': {
@@ -67,11 +67,11 @@ export const TEMPLATE_VARIATIONS: Record<TemplateType, TemplateMetadata> = {
     label: '5. Biblioteca / SDK / CLI para Devs',
     badgeEmoji: '🛠️',
     defaultCategory: 'Libs, SDKs & CLI Dev',
-    featureLeadIn: 'Por que colocar essa ferramenta na sua stack:',
-    scenarioHeader: '💻 IMAGINE NO SEU PROJETO:',
-    stepsLeadIn: 'E a biblioteca resolve:',
-    killerHeader: '🚀 Por que os devs estão adotando?',
-    summaryHeader: '📌 RESUMINDO',
+    featureLeadIn: '🛠️ Superpoderes que ele injeta no seu código:',
+    scenarioHeader: '💻 COMO FICA O CÓDIGO NO SEU PROJETO:',
+    stepsLeadIn: 'E a biblioteca entrega de bandeja:',
+    killerHeader: '🚀 Por que a comunidade dev está adotando em massa?',
+    summaryHeader: '📌 COLOQUE NO SEU RADAR SE VOCÊ:',
     description: 'Para pacotes npm/PyPI, frameworks, CLIs de terminal e bibliotecas de código.'
   }
 };
@@ -168,22 +168,36 @@ export function buildWhatsAppText(
   lines.push('');
   lines.push('━━━━━━━━━━━━━━━━━━');
   lines.push('');
-  lines.push(summary.scenarioTitle.trim() || tpl.scenarioHeader);
-  lines.push('');
-  lines.push(summary.scenarioIntro.trim());
+
+  const scenarioTitle = (summary.scenarioTitle && summary.scenarioTitle.trim()) || tpl.scenarioHeader;
+  lines.push(scenarioTitle);
   lines.push('');
 
-  const cleanPrompt = summary.scenarioPrompt.trim().replace(/^["“”]+|["“”]+$/g, '');
-  lines.push(`"${cleanPrompt}"`);
-  lines.push('');
+  const scenarioIntro = (summary.scenarioIntro || '').trim();
+  const cleanPrompt = (summary.scenarioPrompt || '').trim().replace(/^["“”]+|["“”]+$/g, '');
+
+  if (scenarioIntro) {
+    lines.push(scenarioIntro);
+    lines.push('');
+  }
+
+  if (cleanPrompt && !scenarioIntro.includes(cleanPrompt)) {
+    lines.push(`"${cleanPrompt}"`);
+    lines.push('');
+  }
+
   lines.push(tpl.stepsLeadIn);
   lines.push('');
 
-  summary.scenarioSteps.forEach((step, idx) => {
-    const cleanStep = step.replace(/^(?:[0-9]️⃣|[0-9]+[.)\-:])\s*/, '').trim();
-    const emoji = STEP_EMOJIS[idx] || `${idx + 1}️⃣`;
-    lines.push(`${emoji} ${cleanStep}`);
-  });
+  if (Array.isArray(summary.scenarioSteps) && summary.scenarioSteps.length > 0) {
+    summary.scenarioSteps.forEach((step, idx) => {
+      const cleanStep = step.replace(/^(?:[0-9]️⃣|[0-9]+[.)\-:])\s*/, '').trim();
+      if (cleanStep) {
+        const emoji = STEP_EMOJIS[idx] || `${idx + 1}️⃣`;
+        lines.push(`${emoji} ${cleanStep}`);
+      }
+    });
+  }
 
   if (summary.scenarioOutro && summary.scenarioOutro.trim()) {
     lines.push('');
@@ -193,7 +207,9 @@ export function buildWhatsAppText(
   lines.push('');
   lines.push('━━━━━━━━━━━━━━━━━━');
   lines.push('');
-  lines.push(summary.killerTitle.trim() || tpl.killerHeader);
+
+  const killerTitle = (summary.killerTitle && summary.killerTitle.trim()) || tpl.killerHeader;
+  lines.push(killerTitle);
   lines.push('');
   lines.push(summary.killerText.trim());
   lines.push('');

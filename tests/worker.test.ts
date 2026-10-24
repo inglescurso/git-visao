@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { parseGitHubRepoInput } from '../src/github.ts';
 import {
+  TEMPLATE_VARIATIONS,
   buildWhatsAppText,
   detectCategory,
   detectTemplateType,
@@ -289,7 +290,7 @@ test('2. Detecção das 5 variações de template e formatação WhatsApp confor
     assert.ok(text.includes('🕒 Último commit em 23/10/2026'));
     assert.ok(text.includes('━━━━━━━━━━━━━━━━━━'));
     assert.ok(text.includes('1️⃣ '));
-    assert.ok(text.includes('📌 RESUMINDO'));
+    assert.ok(text.includes(TEMPLATE_VARIATIONS[tpl].summaryHeader));
     assert.ok(text.includes('🚀 '));
   }
 });
