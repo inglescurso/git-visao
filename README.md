@@ -121,7 +121,7 @@ Em vez de gerar textos engessados sempre com a mesma estrutura, o **GitVisão** 
 | Método | Rota | Autenticação | Descrição |
 | :---: | :--- | :---: | :--- |
 | `GET` | `/api/health` | Pública | Status do banco D1, modelo OmniRoute ativo, categorias e templates disponíveis. |
-| `GET` | `/api/repos` | Pública | Lista e filtra repositórios (`?q=`, `?category=`, `?template=`, `?sort=recent\|stars\|name`). |
+| `GET` | `/api/repos` | Pública | Lista repositórios com **paginação por cursor** (`?limit=30`, `?cursor=...`, `?q=`, `?category=`, `?template=`, `?sort=recent\|stars\|name`). Retorna `items`, `total`, `hasMore`, `nextCursor`, `byCategory` e `byTemplate`. |
 | `GET` | `/api/check?repo=...` | Pública | Verifica instantaneamente se um repositório (`owner/repo` ou URL) já existe no catálogo D1. |
 | `POST` | `/api/repos` | Pública (se em cache) / **Senha Admin** (novo ou `force: true`) | Retorna do cache D1 se já existir, ou busca no GitHub + gera resumo via OmniRoute e salva no D1. |
 | `DELETE` | `/api/repos/:owner/:name` | **Senha Admin** | Remove um repositório do catálogo D1. |

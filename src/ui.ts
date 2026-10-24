@@ -374,6 +374,25 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
       </div>
 
       <div id="repos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+      <div id="pagination-container" class="mt-8 flex flex-col items-center justify-center gap-3">
+        <div id="pagination-status" class="text-xs sm:text-sm text-slate-400 font-mono">
+          Exibindo <span id="displayed-repos-count" class="font-bold text-sky-400">0</span> de <span id="filtered-repos-count" class="font-bold text-white">0</span> repositórios
+        </div>
+        <button
+          id="load-more-btn"
+          type="button"
+          class="hidden px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 text-slate-950 font-bold text-sm shadow-lg shadow-sky-500/20 transition cursor-pointer flex items-center gap-2"
+        >
+          <span>⬇️ Carregar Mais Repositórios</span>
+        </button>
+        <div id="load-more-loading" class="hidden text-xs text-sky-400 font-mono animate-pulse">
+          ⏳ Carregando mais repositórios...
+        </div>
+        <div id="all-loaded-msg" class="hidden text-xs text-slate-500 font-mono">
+          🎉 Todos os repositórios foram carregados!
+        </div>
+      </div>
     </section>
   </main>
 
@@ -629,12 +648,20 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
     };
 
     let allRepos = [];
+    let nextCursor = null;
+    let hasMore = false;
+    let totalFilteredCount = 0;
+    let globalTotalCount = 0;
+    let categoryCounts = {};
+    const PAGE_LIMIT = 30;
+    let isLoading = false;
     let activeCategory = '';
     let activeTemplate = '';
     let activeSort = 'recent';
     let searchQuery = '';
     let currentCheckedRepo = null;
     let forceRegenerateMode = false;
+    let searchDebounceTimer = null;
 
     function escapeHtml(str) {
       return String(str ?? '')
@@ -796,33 +823,136 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
       }
     }
 
-    async function loadRepos() {
+    async function fetchRepos(reset = false) {
+      if (isLoading) return;
+      isLoading = true;
+
       const loadingEl = document.getElementById('repos-loading');
+      const loadMoreBtn = document.getElementById('load-more-btn');
+      const loadMoreLoading = document.getElementById('load-more-loading');
+      const allLoadedMsg = document.getElementById('all-loaded-msg');
+      const emptyEl = document.getElementById('repos-empty');
+
+      if (reset) {
+        nextCursor = null;
+        hasMore = false;
+        allRepos = [];
+        if (loadingEl) loadingEl.classList.remove('hidden');
+        if (emptyEl) emptyEl.classList.add('hidden');
+        if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
+        if (loadMoreLoading) loadMoreLoading.classList.add('hidden');
+        if (allLoadedMsg) allLoadedMsg.classList.add('hidden');
+      } else {
+        if (loadMoreLoading) loadMoreLoading.classList.remove('hidden');
+        if (loadMoreBtn) {
+          loadMoreBtn.disabled = true;
+          loadMoreBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        }
+      }
+
       try {
-        const res = await fetch('/api/repos?limit=1000');
+        const params = new URLSearchParams();
+        params.set('limit', String(PAGE_LIMIT));
+        const sortVal = activeSort === 'alpha' ? 'name' : activeSort;
+        params.set('sort', sortVal);
+
+        if (searchQuery.trim()) {
+          params.set('q', searchQuery.trim());
+        }
+        if (activeCategory) {
+          params.set('category', activeCategory);
+        }
+        if (activeTemplate) {
+          params.set('template', activeTemplate);
+        }
+        if (!reset && nextCursor) {
+          params.set('cursor', nextCursor);
+        }
+
+        const res = await fetch('/api/repos?' + params.toString());
         const data = await res.json();
+
+        nextCursor = data.nextCursor || null;
+        hasMore = Boolean(data.hasMore);
+        totalFilteredCount = Number(data.total || 0);
+
+        if (data.byCategory && typeof data.byCategory === 'object') {
+          categoryCounts = data.byCategory;
+        }
+
+        if (!activeCategory && !activeTemplate && !searchQuery.trim()) {
+          globalTotalCount = totalFilteredCount;
+        }
+
         const rawList = data.items || data.repos || data.data || (Array.isArray(data) ? data : []);
-        allRepos = rawList.map(normalizeRepo).filter(Boolean);
-        document.getElementById('total-repos-count').textContent = String(allRepos.length);
-      } catch (err) {
-        console.error('Erro ao carregar repositórios:', err);
-      } finally {
-        loadingEl.classList.add('hidden');
+        const newItems = rawList.map(normalizeRepo).filter(Boolean);
+
+        if (reset) {
+          allRepos = newItems;
+        } else {
+          allRepos = allRepos.concat(newItems);
+        }
+
+        // Atualiza contadores na tela
+        const totalCountEl = document.getElementById('total-repos-count');
+        if (totalCountEl) {
+          totalCountEl.textContent = String(globalTotalCount || totalFilteredCount);
+        }
+        const displayedEl = document.getElementById('displayed-repos-count');
+        if (displayedEl) {
+          displayedEl.textContent = String(allRepos.length);
+        }
+        const filteredEl = document.getElementById('filtered-repos-count');
+        if (filteredEl) {
+          filteredEl.textContent = String(totalFilteredCount);
+        }
+
         renderCategoryPills();
         renderRepoGrid();
+
+        // Controla o botão de "Carregar Mais"
+        if (hasMore && nextCursor) {
+          if (loadMoreBtn) loadMoreBtn.classList.remove('hidden');
+          if (allLoadedMsg) allLoadedMsg.classList.add('hidden');
+        } else if (!hasMore && allRepos.length > 0) {
+          if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
+          if (allLoadedMsg) allLoadedMsg.classList.remove('hidden');
+        } else {
+          if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
+          if (allLoadedMsg) allLoadedMsg.classList.add('hidden');
+        }
+      } catch (err) {
+        console.error('Erro ao carregar repositórios:', err);
+        showToast('Erro ao carregar repositórios.', 'error');
+      } finally {
+        isLoading = false;
+        if (loadingEl) loadingEl.classList.add('hidden');
+        if (loadMoreLoading) loadMoreLoading.classList.add('hidden');
+        if (loadMoreBtn) {
+          loadMoreBtn.disabled = false;
+          loadMoreBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+        }
       }
     }
 
     function renderCategoryPills() {
       const container = document.getElementById('category-pills');
       const counts = {};
-      for (const cat of ALL_CATEGORIES) counts[cat] = 0;
-      for (const r of allRepos) {
-        counts[r.category] = (counts[r.category] || 0) + 1;
+      const hasBackendCounts = categoryCounts && Object.keys(categoryCounts).length > 0;
+
+      for (const cat of ALL_CATEGORIES) {
+        counts[cat] = hasBackendCounts ? (Number(categoryCounts[cat]) || 0) : 0;
+      }
+      if (!hasBackendCounts) {
+        for (const r of allRepos) {
+          counts[r.category] = (counts[r.category] || 0) + 1;
+        }
       }
 
+      const totalAll = globalTotalCount || totalFilteredCount || allRepos.length;
+
       const pills = [
-        { label: 'Todas as Categorias', value: '', count: allRepos.length },
+        { label: 'Todas as Categorias', value: '', count: totalAll },
         ...ALL_CATEGORIES.map((c) => ({ label: c, value: c, count: counts[c] || 0 }))
       ];
 
@@ -840,46 +970,15 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
       container.querySelectorAll('.category-pill').forEach((btn) => {
         btn.addEventListener('click', () => {
           activeCategory = btn.getAttribute('data-category') || '';
-          renderCategoryPills();
-          renderRepoGrid();
+          fetchRepos(true);
         });
       });
-    }
-
-    function getFilteredRepos() {
-      const q = searchQuery.trim().toLowerCase();
-      let list = allRepos.filter((r) => {
-        if (activeCategory && r.category !== activeCategory) return false;
-        if (activeTemplate && r.templateType !== activeTemplate) return false;
-        if (!q) return true;
-        const haystack = [
-          r.fullName,
-          r.description,
-          r.hookTitle,
-          r.introText,
-          r.category,
-          r.language,
-          r.summaryText,
-          ...(r.features || []),
-          ...(r.topics || [])
-        ].join(' ').toLowerCase();
-        return haystack.includes(q);
-      });
-
-      if (activeSort === 'stars') {
-        list.sort((a, b) => b.stars - a.stars);
-      } else if (activeSort === 'alpha') {
-        list.sort((a, b) => a.fullName.localeCompare(b.fullName, 'pt-BR'));
-      } else {
-        list.sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
-      }
-      return list;
     }
 
     function renderRepoGrid(highlightRepoKey = '') {
       const grid = document.getElementById('repos-grid');
       const emptyEl = document.getElementById('repos-empty');
-      const list = getFilteredRepos();
+      const list = allRepos;
 
       if (list.length === 0) {
         grid.innerHTML = '';
@@ -1138,7 +1237,7 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
         }
 
         const saved = normalizeRepo(data.repo || data.record || data.item || data);
-        await loadRepos();
+        await fetchRepos(true);
         document.getElementById('check-generate-panel').classList.add('hidden');
 
         if (saved && saved.repoKey) {
@@ -1164,18 +1263,29 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
     // Filtros e Busca
     document.getElementById('search-input').addEventListener('input', (e) => {
       searchQuery = e.target.value || '';
-      renderRepoGrid();
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        fetchRepos(true);
+      }, 300);
     });
 
     document.getElementById('filter-template-select').addEventListener('change', (e) => {
       activeTemplate = e.target.value || '';
-      renderRepoGrid();
+      fetchRepos(true);
     });
 
     document.getElementById('sort-select').addEventListener('change', (e) => {
       activeSort = e.target.value || 'recent';
-      renderRepoGrid();
+      fetchRepos(true);
     });
+
+    // Botão de Carregar Mais
+    const loadMoreBtnEl = document.getElementById('load-more-btn');
+    if (loadMoreBtnEl) {
+      loadMoreBtnEl.addEventListener('click', () => {
+        fetchRepos(false);
+      });
+    }
 
     // Modal
     document.getElementById('modal-close-btn').addEventListener('click', closeVisaoModal);
@@ -1315,7 +1425,7 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
 
     // Inicialização
     loadHealth();
-    loadRepos();
+    fetchRepos(true);
   </script>
 </body>
 </html>`;

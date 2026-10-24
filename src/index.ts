@@ -272,7 +272,8 @@ export default {
             : 'recent';
 
         const limitParam = searchParams.get('limit');
-        const limit = limitParam ? Number(limitParam) : undefined;
+        const limit = limitParam ? Number(limitParam) : 30;
+        const cursor = searchParams.get('cursor') || undefined;
 
         const data = await listRepositories(env.DB, {
           q: searchParams.get('q') || undefined,
@@ -280,7 +281,8 @@ export default {
           templateType:
             searchParams.get('template') || searchParams.get('templateType') || undefined,
           sort,
-          limit
+          limit,
+          cursor
         });
 
         return jsonResponse({

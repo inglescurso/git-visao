@@ -15,11 +15,14 @@ import { extractAdminPassword, verifyAdminPassword } from '../src/auth.ts';
 import worker from '../src/index.ts';
 import type { Env, GitHubRepoMetadata, RepoRecord } from '../src/types.ts';
 import {
+  decodeCursor,
+  encodeCursor,
   ensureDatabaseInitialized,
   findRepoByKey,
   getRuntimeSettings,
   invalidateSettingsCache,
   saveRuntimeSettings,
+  type RepoCursor,
   type SerializedRepo
 } from '../src/db.ts';
 
@@ -152,8 +155,49 @@ function createInMemoryD1(): D1Database {
       },
 
       async first<T = unknown>(): Promise<T | null> {
-        if (normalizedSql.includes('SELECT COUNT(*) as total FROM repositories')) {
-          return { total: rows.size } as unknown as T;
+        if (
+          normalizedSql.includes('SELECT COUNT(*) as total FROM repositories') ||
+          normalizedSql.includes('SELECT COUNT(*) as count FROM repositories') ||
+          normalizedSql.includes('SELECT COUNT(*) as cnt FROM repositories') ||
+          normalizedSql.startsWith('SELECT COUNT(*)')
+        ) {
+          let list = Array.from(rows.values());
+          let argIndex = 0;
+
+          if (normalizedSql.includes('LOWER(full_name) LIKE ?')) {
+            const rawLike = String(boundArgs[argIndex] || '').replace(/^%|%$/g, '').toLowerCase();
+            argIndex += 7;
+            list = list.filter((r) => {
+              const hay = [
+                r.full_name,
+                r.description,
+                r.hook_title,
+                r.intro_text,
+                r.features_json,
+                r.summary_text,
+                r.topics_json
+              ]
+                .join(' ')
+                .toLowerCase();
+              return hay.includes(rawLike);
+            });
+          }
+
+          if (normalizedSql.includes('category = ?')) {
+            const cat = String(boundArgs[argIndex++] || '');
+            list = list.filter((r) => r.category === cat);
+          }
+
+          if (normalizedSql.includes('template_type = ?')) {
+            const tpl = String(boundArgs[argIndex++] || '');
+            list = list.filter((r) => r.template_type === tpl);
+          }
+
+          return {
+            total: list.length,
+            count: list.length,
+            cnt: list.length
+          } as unknown as T;
         }
 
         if (normalizedSql.includes('FROM app_settings') && normalizedSql.includes('WHERE key = ?')) {
@@ -220,15 +264,66 @@ function createInMemoryD1(): D1Database {
             list = list.filter((r) => r.template_type === tpl);
           }
 
-          if (normalizedSql.includes('ORDER BY stars DESC')) {
-            list.sort((a, b) => b.stars - a.stars);
-          } else if (normalizedSql.includes('ORDER BY full_name ASC')) {
-            list.sort((a, b) => a.full_name.localeCompare(b.full_name));
-          } else {
-            list.sort((a, b) => b.id - a.id);
+          if (normalizedSql.includes('(updated_at < ? OR (updated_at = ? AND id < ?))')) {
+            const cursorUpdatedAt = String(boundArgs[argIndex++] ?? '');
+            argIndex++; // pula o segundo ? (mesmo updatedAt)
+            const cursorId = Number(boundArgs[argIndex++] ?? 0);
+            list = list.filter((r) => {
+              if (r.updated_at < cursorUpdatedAt) return true;
+              if (r.updated_at === cursorUpdatedAt && r.id < cursorId) return true;
+              return false;
+            });
+          } else if (normalizedSql.includes('id < ?')) {
+            const cursorId = Number(boundArgs[argIndex++] ?? 0);
+            list = list.filter((r) => r.id < cursorId);
+          } else if (normalizedSql.includes('(stars < ? OR (stars = ? AND id < ?))')) {
+            const cursorStars = Number(boundArgs[argIndex++] ?? 0);
+            argIndex++; // pula o segundo ? (mesmo stars)
+            const cursorId = Number(boundArgs[argIndex++] ?? 0);
+            list = list.filter((r) => {
+              if (r.stars < cursorStars) return true;
+              if (r.stars === cursorStars && r.id < cursorId) return true;
+              return false;
+            });
+          } else if (normalizedSql.includes('(full_name > ? OR (full_name = ? AND id > ?))')) {
+            const cursorName = String(boundArgs[argIndex++] ?? '');
+            argIndex++; // pula o segundo ? (mesmo name)
+            const cursorId = Number(boundArgs[argIndex++] ?? 0);
+            list = list.filter((r) => {
+              if (r.full_name > cursorName) return true;
+              if (r.full_name === cursorName && r.id > cursorId) return true;
+              return false;
+            });
           }
 
-          const limitArg = Number(boundArgs[argIndex] ?? 100);
+          if (normalizedSql.includes('ORDER BY stars DESC')) {
+            list.sort((a, b) => {
+              if (b.stars !== a.stars) return b.stars - a.stars;
+              return b.id - a.id;
+            });
+          } else if (normalizedSql.includes('ORDER BY full_name ASC')) {
+            list.sort((a, b) => {
+              const cmp = a.full_name.localeCompare(b.full_name);
+              if (cmp !== 0) return cmp;
+              return a.id - b.id;
+            });
+          } else {
+            list.sort((a, b) => {
+              if (a.updated_at && b.updated_at && a.updated_at !== b.updated_at) {
+                return b.updated_at.localeCompare(a.updated_at);
+              }
+              return b.id - a.id;
+            });
+          }
+
+          let limitArg = 100;
+          const limitMatch = normalizedSql.match(/LIMIT\s+(\d+)/i);
+          if (limitMatch) {
+            limitArg = Number(limitMatch[1]);
+          } else if (normalizedSql.includes('LIMIT ?')) {
+            limitArg = Number(boundArgs[argIndex] ?? boundArgs[boundArgs.length - 1] ?? 100);
+          }
+
           if (Number.isFinite(limitArg) && limitArg > 0) {
             list = list.slice(0, limitArg);
           }
@@ -775,4 +870,104 @@ test('6. Persistência Híbrida (KV + D1): precedência do KV sobre env após re
     'Item restaurado do KV deve aparecer na listagem da API'
   );
 });
+
+test('7. Paginação com cursor no D1 e API (/api/repos com limit, hasMore e nextCursor)', async () => {
+  // 1. Testa encode/decode de cursor para 'recent', 'stars' e 'name'
+  const recentCursor: RepoCursor = {
+    sort: 'recent',
+    id: 42,
+    updatedAt: '2026-10-24T18:00:00.000Z'
+  };
+  const encodedRecent = encodeCursor(recentCursor);
+  assert.equal(typeof encodedRecent, 'string');
+  assert.ok(encodedRecent.length > 0);
+  const decodedRecent = decodeCursor(encodedRecent);
+  assert.deepEqual(decodedRecent, recentCursor);
+
+  const starsCursor: RepoCursor = {
+    sort: 'stars',
+    id: 10,
+    stars: 12500
+  };
+  const encodedStars = encodeCursor(starsCursor);
+  assert.equal(typeof encodedStars, 'string');
+  assert.ok(encodedStars.length > 0);
+  const decodedStars = decodeCursor(encodedStars);
+  assert.deepEqual(decodedStars, starsCursor);
+
+  const nameCursor: RepoCursor = {
+    sort: 'name',
+    id: 5,
+    name: 'browseros-ai/BrowserOS'
+  };
+  const encodedName = encodeCursor(nameCursor);
+  assert.equal(typeof encodedName, 'string');
+  assert.ok(encodedName.length > 0);
+  const decodedName = decodeCursor(encodedName);
+  assert.deepEqual(decodedName, nameCursor);
+
+  // Casos extremos de cursor inválido
+  assert.equal(decodeCursor(''), null);
+  assert.equal(decodeCursor('invalid-cursor-base64!'), null);
+  assert.equal(decodeCursor(null), null);
+  assert.equal(decodeCursor(undefined), null);
+
+  // 2. Popula ou usa o mock com os repositórios de seed
+  const env: Env = {
+    DB: createInMemoryD1(),
+    GITVISAO_KV: createInMemoryKV(),
+    OMNI_KEYS: createInMemoryKV(),
+    ADMIN_PASSWORD: 'admin'
+  };
+
+  await ensureDatabaseInitialized(env.DB, env);
+
+  // 3. Faz chamada a worker.fetch(new Request('http://localhost/api/repos?limit=2'), env)
+  const res1 = await worker.fetch(new Request('http://localhost/api/repos?limit=2'), env);
+  assert.equal(res1.status, 200);
+
+  const data1 = (await res1.json()) as {
+    ok: boolean;
+    total: number;
+    hasMore: boolean;
+    nextCursor: string | null;
+    items: Array<{ id: number; repo_key: string }>;
+  };
+
+  assert.equal(data1.ok, true);
+  assert.equal(data1.items.length, 2);
+  assert.equal(data1.hasMore, true);
+  assert.equal(typeof data1.nextCursor, 'string');
+  assert.ok(data1.nextCursor!.length > 0);
+
+  const firstPageIds = data1.items.map((i) => i.id);
+
+  // 4. Faz a segunda chamada passando o cursor: worker.fetch(new Request('http://localhost/api/repos?limit=2&cursor=' + data.nextCursor), env)
+  const res2 = await worker.fetch(
+    new Request('http://localhost/api/repos?limit=2&cursor=' + data1.nextCursor),
+    env
+  );
+  assert.equal(res2.status, 200);
+
+  const data2 = (await res2.json()) as {
+    ok: boolean;
+    total: number;
+    hasMore: boolean;
+    nextCursor: string | null;
+    items: Array<{ id: number; repo_key: string }>;
+  };
+
+  assert.equal(data2.ok, true);
+  assert.equal(data2.items.length, 2);
+  // Valida que os itens retornados são da página seguinte (IDs diferentes dos da primeira página)
+  const secondPageIds = data2.items.map((i) => i.id);
+  assert.equal(secondPageIds.length, 2);
+  for (const id of secondPageIds) {
+    assert.ok(
+      !firstPageIds.includes(id),
+      `ID ${id} da segunda página não deve estar na primeira página (${firstPageIds.join(', ')})`
+    );
+  }
+});
+
 

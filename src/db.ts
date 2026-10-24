@@ -7,12 +7,76 @@ import type {
   RuntimeSettings
 } from './types.ts';
 
+export interface RepoCursor {
+  sort: 'recent' | 'stars' | 'name';
+  id: number;
+  updatedAt?: string;
+  stars?: number;
+  name?: string;
+}
+
+export function encodeCursor(cursor: RepoCursor): string {
+  try {
+    const json = JSON.stringify(cursor);
+    if (typeof btoa === 'function') {
+      try {
+        return btoa(unescape(encodeURIComponent(json)));
+      } catch {
+        return btoa(json);
+      }
+    }
+    if (typeof Buffer !== 'undefined') {
+      return Buffer.from(json, 'utf-8').toString('base64');
+    }
+    return '';
+  } catch {
+    return '';
+  }
+}
+
+export function decodeCursor(raw: string | null | undefined): RepoCursor | null {
+  if (!raw || typeof raw !== 'string') return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  try {
+    let json = '';
+    if (typeof atob === 'function') {
+      const decoded = atob(trimmed);
+      try {
+        json = decodeURIComponent(escape(decoded));
+      } catch {
+        json = decoded;
+      }
+    } else if (typeof Buffer !== 'undefined') {
+      json = Buffer.from(trimmed, 'base64').toString('utf-8');
+    } else {
+      return null;
+    }
+
+    const parsed = JSON.parse(json);
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      typeof parsed.id === 'number' &&
+      (parsed.sort === 'recent' || parsed.sort === 'stars' || parsed.sort === 'name')
+    ) {
+      return parsed as RepoCursor;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 export interface RepoSearchFilters {
   q?: string;
   category?: string;
   templateType?: string;
   sort?: 'recent' | 'stars' | 'name';
   limit?: number;
+  cursor?: string;
 }
 
 export interface SerializedRepo
@@ -20,6 +84,8 @@ export interface SerializedRepo
   topics: string[];
   features: string[];
   scenario_steps: string[];
+  fullName?: string;
+  updatedAt?: string;
 }
 
 export function getKV(env?: Env): KVNamespace | null {
@@ -56,6 +122,8 @@ export function serializeRepoRecord(row: RepoRecord): SerializedRepo {
   const { topics_json, features_json, scenario_steps_json, ...rest } = row;
   return {
     ...rest,
+    fullName: row.full_name,
+    updatedAt: row.updated_at,
     stars: Number(row.stars ?? 0),
     forks: Number(row.forks ?? 0),
     topics: safeParseStringArray(topics_json),
@@ -350,15 +418,20 @@ export async function listRepositories(
 ): Promise<{
   items: SerializedRepo[];
   total: number;
+  hasMore: boolean;
+  nextCursor: string | null;
+  limit: number;
   byCategory: Record<string, number>;
   byTemplate: Record<string, number>;
 }> {
-  const whereClauses: string[] = [];
-  const params: unknown[] = [];
+  const limit = Math.min(Math.max(Number(filters.limit) || 30, 1), 100);
+
+  const baseWhereClauses: string[] = [];
+  const baseParams: unknown[] = [];
 
   if (filters.q && filters.q.trim()) {
     const q = `%${filters.q.trim().toLowerCase()}%`;
-    whereClauses.push(
+    baseWhereClauses.push(
       `(
         LOWER(full_name) LIKE ? OR
         LOWER(description) LIKE ? OR
@@ -369,7 +442,7 @@ export async function listRepositories(
         LOWER(topics_json) LIKE ?
       )`
     );
-    params.push(q, q, q, q, q, q, q);
+    baseParams.push(q, q, q, q, q, q, q);
   }
 
   if (
@@ -378,8 +451,8 @@ export async function listRepositories(
     filters.category !== 'all' &&
     filters.category !== 'Todas'
   ) {
-    whereClauses.push('category = ?');
-    params.push(filters.category.trim());
+    baseWhereClauses.push('category = ?');
+    baseParams.push(filters.category.trim());
   }
 
   if (
@@ -388,29 +461,81 @@ export async function listRepositories(
     filters.templateType !== 'all' &&
     filters.templateType !== 'Todos'
   ) {
-    whereClauses.push('template_type = ?');
-    params.push(filters.templateType.trim());
+    baseWhereClauses.push('template_type = ?');
+    baseParams.push(filters.templateType.trim());
+  }
+
+  const whereClauses: string[] = [...baseWhereClauses];
+  const params: unknown[] = [...baseParams];
+
+  const sort =
+    filters.sort === 'stars' || filters.sort === 'name' || filters.sort === 'recent'
+      ? filters.sort
+      : 'recent';
+
+  const cursor = decodeCursor(filters.cursor);
+
+  if (cursor) {
+    if (sort === 'stars' && cursor.stars !== undefined) {
+      whereClauses.push('(stars < ? OR (stars = ? AND id < ?))');
+      params.push(cursor.stars, cursor.stars, cursor.id);
+    } else if (sort === 'name' && cursor.name !== undefined) {
+      whereClauses.push('(full_name > ? OR (full_name = ? AND id > ?))');
+      params.push(cursor.name, cursor.name, cursor.id);
+    } else {
+      if (cursor.updatedAt) {
+        whereClauses.push('(updated_at < ? OR (updated_at = ? AND id < ?))');
+        params.push(cursor.updatedAt, cursor.updatedAt, cursor.id);
+      } else {
+        whereClauses.push('id < ?');
+        params.push(cursor.id);
+      }
+    }
+  }
+
+  let orderBySql = 'ORDER BY updated_at DESC, id DESC';
+  if (sort === 'stars') {
+    orderBySql = 'ORDER BY stars DESC, id DESC';
+  } else if (sort === 'name') {
+    orderBySql = 'ORDER BY full_name ASC, id ASC';
   }
 
   const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-
-  let orderBySql = 'ORDER BY updated_at DESC, id DESC';
-  if (filters.sort === 'stars') {
-    orderBySql = 'ORDER BY stars DESC, updated_at DESC';
-  } else if (filters.sort === 'name') {
-    orderBySql = 'ORDER BY full_name ASC';
-  }
-
-  const limit = Math.min(Math.max(Number(filters.limit) || 1000, 1), 2000);
+  const fetchLimit = limit + 1;
   const querySql = `SELECT * FROM repositories ${whereSql} ${orderBySql} LIMIT ?`;
 
   const result = await db
     .prepare(querySql)
-    .bind(...params, limit)
+    .bind(...params, fetchLimit)
     .all<RepoRecord>();
 
-  const rows = result?.results ?? [];
-  const items = rows.map(serializeRepoRecord);
+  const rawRows = result?.results ?? [];
+  const hasMore = rawRows.length > limit;
+  const items = (hasMore ? rawRows.slice(0, limit) : rawRows).map(serializeRepoRecord);
+
+  let nextCursor: string | null = null;
+  if (hasMore && items.length > 0) {
+    const last = items[items.length - 1];
+    if (sort === 'stars') {
+      nextCursor = encodeCursor({
+        sort: 'stars',
+        id: last.id,
+        stars: last.stars
+      });
+    } else if (sort === 'name') {
+      nextCursor = encodeCursor({
+        sort: 'name',
+        id: last.id,
+        name: last.fullName || last.full_name
+      });
+    } else {
+      nextCursor = encodeCursor({
+        sort: 'recent',
+        id: last.id,
+        updatedAt: last.updatedAt || last.updated_at
+      });
+    }
+  }
 
   const allStatsResult = await db
     .prepare('SELECT category, template_type FROM repositories')
@@ -429,11 +554,24 @@ export async function listRepositories(
   }
 
   const globalTotal = (allStatsResult?.results ?? []).length;
-  const total = whereClauses.length > 0 ? items.length : globalTotal;
+  let total = globalTotal;
+
+  if (baseWhereClauses.length > 0) {
+    const baseWhereSql = `WHERE ${baseWhereClauses.join(' AND ')}`;
+    const countSql = `SELECT COUNT(*) as count FROM repositories ${baseWhereSql}`;
+    const countResult = await db
+      .prepare(countSql)
+      .bind(...baseParams)
+      .first<{ count: number }>();
+    total = Number(countResult?.count ?? 0);
+  }
 
   return {
     items,
     total,
+    hasMore,
+    nextCursor,
+    limit,
     byCategory,
     byTemplate
   };
