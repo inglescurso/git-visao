@@ -63,7 +63,7 @@ async function loadEffectiveContext(env: Env): Promise<{
   settings: RuntimeSettings;
   effectiveEnv: Env;
 }> {
-  await ensureDatabaseInitialized(env.DB);
+  await ensureDatabaseInitialized(env.DB, env);
   const settings = await getRuntimeSettings(env.DB, env);
   const effectiveEnv: Env = {
     ...env,
@@ -249,7 +249,7 @@ export default {
           updates.publicAppTitle = body.publicAppTitle.trim();
         }
 
-        await saveRuntimeSettings(env.DB, updates);
+        await saveRuntimeSettings(env.DB, updates, env);
         const updatedSettings = await getRuntimeSettings(env.DB, env);
         const view = buildPublicSettingsView(updatedSettings);
 
@@ -305,7 +305,7 @@ export default {
         }
 
         await loadEffectiveContext(env);
-        const existing = await findRepoByKey(env.DB, parsed.repoKey);
+        const existing = await findRepoByKey(env.DB, parsed.repoKey, env);
 
         return jsonResponse({
           ok: true,
@@ -347,7 +347,7 @@ export default {
         }
 
         const { settings, effectiveEnv } = await loadEffectiveContext(env);
-        const existing = await findRepoByKey(env.DB, parsed.repoKey);
+        const existing = await findRepoByKey(env.DB, parsed.repoKey, env);
 
         // If already cataloged in D1 and not forcing regeneration, return immediately without requiring password
         if (existing && !body.force) {
@@ -386,7 +386,7 @@ export default {
           effectiveEnv,
           body.templateType
         );
-        const saved = await upsertRepository(env.DB, meta, summary);
+        const saved = await upsertRepository(env.DB, meta, summary, env);
 
         return jsonResponse({
           ok: true,
@@ -425,7 +425,7 @@ export default {
           );
         }
 
-        const deleted = await deleteRepository(env.DB, repoKey);
+        const deleted = await deleteRepository(env.DB, repoKey, env);
         if (!deleted) {
           return jsonResponse(
             { ok: false, error: 'Repositório não encontrado no catálogo.' },

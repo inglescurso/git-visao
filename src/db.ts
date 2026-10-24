@@ -22,6 +22,23 @@ export interface SerializedRepo
   scenario_steps: string[];
 }
 
+export function getKV(env?: Env): KVNamespace | null {
+  if (!env) return null;
+  return env.GITVISAO_KV || env.OMNI_KEYS || null;
+}
+
+interface SettingsCacheEntry {
+  settings: RuntimeSettings;
+  expiresAt: number;
+}
+
+let settingsCache = new WeakMap<object, SettingsCacheEntry>();
+const SETTINGS_CACHE_TTL_MS = 5000;
+
+export function invalidateSettingsCache(): void {
+  settingsCache = new WeakMap<object, SettingsCacheEntry>();
+}
+
 function safeParseStringArray(raw: string | null | undefined): string[] {
   if (!raw) return [];
   try {
@@ -96,7 +113,7 @@ const CREATE_INDEXES_SQL = [
   'CREATE INDEX IF NOT EXISTS idx_repositories_created_at ON repositories(created_at DESC)'
 ];
 
-export async function ensureDatabaseInitialized(db: D1Database): Promise<void> {
+export async function ensureDatabaseInitialized(db: D1Database, env?: Env): Promise<void> {
   await db.prepare(CREATE_TABLE_SQL).run();
   await db.prepare(CREATE_SETTINGS_TABLE_SQL).run();
   for (const indexSql of CREATE_INDEXES_SQL) {
@@ -108,69 +125,223 @@ export async function ensureDatabaseInitialized(db: D1Database): Promise<void> {
     .first<{ total: number }>();
   const total = Number(countRow?.total ?? 0);
 
-  if (total === 0 && SEED_REPOSITORIES.length > 0) {
-    const insertSql = `
-      INSERT OR IGNORE INTO repositories (
-        repo_key, full_name, owner, name, repo_url, description,
-        stars, forks, language, topics_json, last_commit_at,
-        category, template_type, hook_title, intro_text, warning_note,
-        features_json, scenario_title, scenario_intro, scenario_prompt,
-        scenario_steps_json, scenario_outro, killer_title, killer_text,
-        summary_text, punchline, whatsapp_text
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+  if (total === 0) {
+    const kv = getKV(env);
+    let restoredCount = 0;
 
-    for (const item of SEED_REPOSITORIES) {
-      await db
-        .prepare(insertSql)
-        .bind(
-          item.repo_key.trim().toLowerCase(),
-          item.full_name,
-          item.owner,
-          item.name,
-          item.repo_url,
-          item.description || '',
-          Number(item.stars ?? 0),
-          Number(item.forks ?? 0),
-          item.language || '',
-          item.topics_json || '[]',
-          item.last_commit_at || '',
-          item.category,
-          item.template_type,
-          item.hook_title,
-          item.intro_text,
-          item.warning_note || '',
-          item.features_json || '[]',
-          item.scenario_title,
-          item.scenario_intro,
-          item.scenario_prompt,
-          item.scenario_steps_json || '[]',
-          item.scenario_outro || '',
-          item.killer_title,
-          item.killer_text,
-          item.summary_text,
-          item.punchline,
-          item.whatsapp_text
-        )
-        .run();
+    if (kv) {
+      try {
+        let repoKeys: string[] = [];
+        const rawKeys = await kv.get('repos:keys');
+        if (rawKeys) {
+          try {
+            const parsed = JSON.parse(rawKeys);
+            if (Array.isArray(parsed)) {
+              repoKeys = parsed.map((k) => String(k).trim().toLowerCase()).filter(Boolean);
+            }
+          } catch {
+            repoKeys = [];
+          }
+        }
+
+        if (repoKeys.length === 0 && typeof kv.list === 'function') {
+          try {
+            const listResult = await kv.list({ prefix: 'repo:' });
+            if (listResult && Array.isArray(listResult.keys)) {
+              repoKeys = listResult.keys
+                .map((k) => k.name.replace(/^repo:/, '').trim().toLowerCase())
+                .filter(Boolean);
+            }
+          } catch (e) {
+            console.warn('Erro ao listar chaves repo: no KV:', e);
+          }
+        }
+
+        if (repoKeys.length > 0) {
+          const insertSql = `
+            INSERT OR IGNORE INTO repositories (
+              repo_key, full_name, owner, name, repo_url, description,
+              stars, forks, language, topics_json, last_commit_at,
+              category, template_type, hook_title, intro_text, warning_note,
+              features_json, scenario_title, scenario_intro, scenario_prompt,
+              scenario_steps_json, scenario_outro, killer_title, killer_text,
+              summary_text, punchline, whatsapp_text, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `;
+
+          for (const key of repoKeys) {
+            try {
+              const rawRepo = await kv.get(`repo:${key}`);
+              if (rawRepo) {
+                const item = JSON.parse(rawRepo);
+                if (item && item.repo_key) {
+                  const topicsJson = Array.isArray(item.topics)
+                    ? JSON.stringify(item.topics)
+                    : typeof item.topics_json === 'string'
+                      ? item.topics_json
+                      : '[]';
+                  const featuresJson = Array.isArray(item.features)
+                    ? JSON.stringify(item.features)
+                    : typeof item.features_json === 'string'
+                      ? item.features_json
+                      : '[]';
+                  const scenarioStepsJson = Array.isArray(item.scenario_steps)
+                    ? JSON.stringify(item.scenario_steps)
+                    : typeof item.scenario_steps_json === 'string'
+                      ? item.scenario_steps_json
+                      : '[]';
+
+                  await db
+                    .prepare(insertSql)
+                    .bind(
+                      item.repo_key.trim().toLowerCase(),
+                      item.full_name,
+                      item.owner,
+                      item.name,
+                      item.repo_url,
+                      item.description || '',
+                      Number(item.stars ?? 0),
+                      Number(item.forks ?? 0),
+                      item.language || '',
+                      topicsJson,
+                      item.last_commit_at || '',
+                      item.category,
+                      item.template_type,
+                      item.hook_title,
+                      item.intro_text,
+                      item.warning_note || '',
+                      featuresJson,
+                      item.scenario_title,
+                      item.scenario_intro,
+                      item.scenario_prompt,
+                      scenarioStepsJson,
+                      item.scenario_outro || '',
+                      item.killer_title,
+                      item.killer_text,
+                      item.summary_text,
+                      item.punchline,
+                      item.whatsapp_text,
+                      item.created_at || new Date().toISOString(),
+                      item.updated_at || new Date().toISOString()
+                    )
+                    .run();
+                  restoredCount++;
+                }
+              }
+            } catch (e) {
+              console.warn(`Erro ao restaurar repositório ${key} do KV:`, e);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao verificar repositórios no KV durante inicialização:', err);
+      }
+    }
+
+    if (restoredCount === 0 && SEED_REPOSITORIES.length > 0) {
+      const insertSql = `
+        INSERT OR IGNORE INTO repositories (
+          repo_key, full_name, owner, name, repo_url, description,
+          stars, forks, language, topics_json, last_commit_at,
+          category, template_type, hook_title, intro_text, warning_note,
+          features_json, scenario_title, scenario_intro, scenario_prompt,
+          scenario_steps_json, scenario_outro, killer_title, killer_text,
+          summary_text, punchline, whatsapp_text
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      const seedKeys: string[] = [];
+
+      for (const item of SEED_REPOSITORIES) {
+        const repoKey = item.repo_key.trim().toLowerCase();
+        seedKeys.push(repoKey);
+        await db
+          .prepare(insertSql)
+          .bind(
+            repoKey,
+            item.full_name,
+            item.owner,
+            item.name,
+            item.repo_url,
+            item.description || '',
+            Number(item.stars ?? 0),
+            Number(item.forks ?? 0),
+            item.language || '',
+            item.topics_json || '[]',
+            item.last_commit_at || '',
+            item.category,
+            item.template_type,
+            item.hook_title,
+            item.intro_text,
+            item.warning_note || '',
+            item.features_json || '[]',
+            item.scenario_title,
+            item.scenario_intro,
+            item.scenario_prompt,
+            item.scenario_steps_json || '[]',
+            item.scenario_outro || '',
+            item.killer_title,
+            item.killer_text,
+            item.summary_text,
+            item.punchline,
+            item.whatsapp_text
+          )
+          .run();
+      }
+
+      if (kv) {
+        try {
+          for (const item of SEED_REPOSITORIES) {
+            const repoKey = item.repo_key.trim().toLowerCase();
+            const saved = await findRepoByKey(db, repoKey);
+            if (saved) {
+              await kv.put(`repo:${repoKey}`, JSON.stringify(saved));
+            }
+          }
+          await kv.put('repos:keys', JSON.stringify(seedKeys));
+        } catch (e) {
+          console.warn('Erro ao salvar seeds no KV:', e);
+        }
+      }
     }
   }
 }
 
 export async function findRepoByKey(
   db: D1Database,
-  repoKey: string
+  repoKey: string,
+  env?: Env
 ): Promise<SerializedRepo | null> {
   const normalizedKey = repoKey.trim().toLowerCase();
   if (!normalizedKey) return null;
 
-  const row = await db
-    .prepare('SELECT * FROM repositories WHERE repo_key = ? LIMIT 1')
-    .bind(normalizedKey)
-    .first<RepoRecord>();
+  try {
+    const row = await db
+      .prepare('SELECT * FROM repositories WHERE repo_key = ? LIMIT 1')
+      .bind(normalizedKey)
+      .first<RepoRecord>();
 
-  if (!row) return null;
-  return serializeRepoRecord(row);
+    if (row) return serializeRepoRecord(row);
+  } catch (err) {
+    console.warn(`Erro ao buscar repo no D1 (${normalizedKey}):`, err);
+  }
+
+  const kv = getKV(env);
+  if (kv) {
+    try {
+      const raw = await kv.get(`repo:${normalizedKey}`);
+      if (raw) {
+        const item = JSON.parse(raw);
+        if (item && item.repo_key) {
+          return item as SerializedRepo;
+        }
+      }
+    } catch {
+      // ignore KV error
+    }
+  }
+
+  return null;
 }
 
 export async function listRepositories(
@@ -268,7 +439,8 @@ export async function listRepositories(
 export async function upsertRepository(
   db: D1Database,
   meta: GitHubRepoMetadata,
-  summary: GeneratedVisaoSummary
+  summary: GeneratedVisaoSummary,
+  env?: Env
 ): Promise<SerializedRepo> {
   const repoKey = (meta.repoKey || meta.fullName).trim().toLowerCase();
   const topicsJson = JSON.stringify(meta.topics ?? []);
@@ -351,19 +523,87 @@ export async function upsertRepository(
   if (!saved) {
     throw new Error(`Falha ao recuperar repositório salvo: ${repoKey}`);
   }
+
+  const kv = getKV(env);
+  if (kv) {
+    try {
+      await kv.put(`repo:${repoKey}`, JSON.stringify(saved));
+
+      let keys: string[] = [];
+      const rawKeys = await kv.get('repos:keys');
+      if (rawKeys) {
+        try {
+          const parsed = JSON.parse(rawKeys);
+          if (Array.isArray(parsed)) {
+            keys = parsed.map((k) => String(k).trim().toLowerCase()).filter(Boolean);
+          }
+        } catch {
+          keys = [];
+        }
+      }
+      if (!keys.includes(repoKey)) {
+        keys.push(repoKey);
+        await kv.put('repos:keys', JSON.stringify(keys));
+      }
+    } catch (err) {
+      console.warn(`Erro ao salvar backup no KV para ${repoKey}:`, err);
+    }
+  }
+
   return saved;
 }
 
-export async function deleteRepository(db: D1Database, repoKey: string): Promise<boolean> {
+export async function deleteRepository(
+  db: D1Database,
+  repoKey: string,
+  env?: Env
+): Promise<boolean> {
   const normalizedKey = repoKey.trim().toLowerCase();
   if (!normalizedKey) return false;
 
   const existing = await findRepoByKey(db, normalizedKey);
-  if (!existing) {
+  const kv = getKV(env);
+
+  let existsInKv = false;
+  if (kv) {
+    try {
+      const kvData = await kv.get(`repo:${normalizedKey}`);
+      if (kvData) existsInKv = true;
+    } catch {
+      // ignore
+    }
+  }
+
+  if (!existing && !existsInKv) {
     return false;
   }
 
-  await db.prepare('DELETE FROM repositories WHERE repo_key = ?').bind(normalizedKey).run();
+  if (existing) {
+    await db.prepare('DELETE FROM repositories WHERE repo_key = ?').bind(normalizedKey).run();
+  }
+
+  if (kv) {
+    try {
+      await kv.delete(`repo:${normalizedKey}`);
+      const rawKeys = await kv.get('repos:keys');
+      if (rawKeys) {
+        try {
+          const keys = JSON.parse(rawKeys);
+          if (Array.isArray(keys)) {
+            const filtered = keys.filter(
+              (k: string) => String(k).trim().toLowerCase() !== normalizedKey
+            );
+            await kv.put('repos:keys', JSON.stringify(filtered));
+          }
+        } catch {
+          // ignore
+        }
+      }
+    } catch (err) {
+      console.warn(`Erro ao deletar ${normalizedKey} do KV:`, err);
+    }
+  }
+
   return true;
 }
 
@@ -387,7 +627,8 @@ const SETTING_KEY_MAP: Record<keyof RuntimeSettingsUpdates, string> = {
 
 export async function saveRuntimeSettings(
   db: D1Database,
-  updates: Partial<RuntimeSettingsUpdates>
+  updates: Partial<RuntimeSettingsUpdates>,
+  env?: Env
 ): Promise<void> {
   await db.prepare(CREATE_SETTINGS_TABLE_SQL).run();
 
@@ -407,119 +648,234 @@ export async function saveRuntimeSettings(
       await db.prepare(upsertSql).bind(dbKey, String(val)).run();
     }
   }
+
+  const kv = getKV(env);
+  if (kv) {
+    try {
+      let currentKvSettings: Record<string, string> = {};
+      const raw = await kv.get('admin:settings');
+      if (raw) {
+        try {
+          currentKvSettings = JSON.parse(raw);
+        } catch {
+          currentKvSettings = {};
+        }
+      }
+
+      for (const [propKey, val] of Object.entries(updates) as Array<
+        [keyof RuntimeSettingsUpdates, string | undefined]
+      >) {
+        if (val !== undefined) {
+          currentKvSettings[propKey] = String(val);
+          const dbKey = SETTING_KEY_MAP[propKey];
+          if (dbKey) {
+            currentKvSettings[dbKey] = String(val);
+          }
+        }
+      }
+
+      await kv.put('admin:settings', JSON.stringify(currentKvSettings));
+    } catch (err) {
+      console.warn('Erro ao salvar settings no KV:', err);
+    }
+  }
+
+  invalidateSettingsCache();
 }
 
 export async function getRuntimeSettings(
   db: D1Database,
   env: Env
 ): Promise<RuntimeSettings> {
+  const cached = typeof db === 'object' && db !== null ? settingsCache.get(db) : null;
+  if (cached && Date.now() < cached.expiresAt) {
+    return cached.settings;
+  }
+
+  const kv = getKV(env);
+  let kvSettings: Record<string, unknown> | null = null;
+  if (kv) {
+    try {
+      const raw = await kv.get('admin:settings');
+      if (raw) {
+        kvSettings = JSON.parse(raw);
+      }
+    } catch (err) {
+      console.warn('Erro ao ler admin:settings do KV:', err);
+    }
+  }
+
   await db.prepare(CREATE_SETTINGS_TABLE_SQL).run();
 
   const rowsResult = await db
     .prepare('SELECT key, value FROM app_settings')
     .all<{ key: string; value: string }>();
 
-  const settingsMap = new Map<string, string>();
+  const d1SettingsMap = new Map<string, string>();
   for (const row of rowsResult?.results ?? []) {
     if (row && typeof row.key === 'string') {
-      settingsMap.set(row.key, String(row.value ?? ''));
+      d1SettingsMap.set(row.key, String(row.value ?? ''));
     }
   }
 
-  const readKey = (...candidates: string[]): string | undefined => {
+  const readKvKey = (...candidates: string[]): string | undefined => {
+    if (!kvSettings || typeof kvSettings !== 'object') return undefined;
     for (const k of candidates) {
-      if (settingsMap.has(k)) {
-        return settingsMap.get(k);
+      if (k in kvSettings) {
+        const val = (kvSettings as Record<string, unknown>)[k];
+        if (val !== undefined && val !== null) {
+          return String(val);
+        }
       }
     }
     return undefined;
   };
 
-  let dbAdminPassword = readKey('admin_password', 'adminPassword', 'ADMIN_PASSWORD');
-  let dbOmnirouteBaseUrl = readKey(
-    'omniroute_base_url',
-    'omnirouteBaseUrl',
-    'OMNIROUTE_BASE_URL'
-  );
-  let dbOmnirouteApiKey = readKey(
-    'omniroute_api_key',
-    'omnirouteApiKey',
-    'OMNIROUTE_API_KEY'
-  );
-  let dbOmnirouteModel = readKey('omniroute_model', 'omnirouteModel', 'OMNIROUTE_MODEL');
-  let dbGithubToken = readKey('github_token', 'githubToken', 'GITHUB_TOKEN');
-  let dbPublicAppTitle = readKey(
-    'public_app_title',
-    'publicAppTitle',
-    'PUBLIC_APP_TITLE'
-  );
+  const readD1Key = (...candidates: string[]): string | undefined => {
+    for (const k of candidates) {
+      if (d1SettingsMap.has(k)) {
+        return d1SettingsMap.get(k);
+      }
+    }
+    return undefined;
+  };
 
-  // Auto-persist non-default env vars to D1 app_settings so Sync Fork on GitHub never wipes secrets
+  let kvAdminPass = readKvKey('adminPassword', 'admin_password', 'ADMIN_PASSWORD');
+  let d1AdminPass = readD1Key('admin_password', 'adminPassword', 'ADMIN_PASSWORD');
+  const envAdminPass = (env.ADMIN_PASSWORD || '').trim();
+
+  let kvBaseUrl = readKvKey('omnirouteBaseUrl', 'omniroute_base_url', 'OMNIROUTE_BASE_URL');
+  let d1BaseUrl = readD1Key('omniroute_base_url', 'omnirouteBaseUrl', 'OMNIROUTE_BASE_URL');
+  const envBaseUrl = (env.OMNIROUTE_BASE_URL || '').trim();
+
+  let kvApiKey = readKvKey('omnirouteApiKey', 'omniroute_api_key', 'OMNIROUTE_API_KEY');
+  let d1ApiKey = readD1Key('omniroute_api_key', 'omnirouteApiKey', 'OMNIROUTE_API_KEY');
+  const envApiKey = (env.OMNIROUTE_API_KEY || '').trim();
+
+  let kvModel = readKvKey('omnirouteModel', 'omniroute_model', 'OMNIROUTE_MODEL');
+  let d1Model = readD1Key('omniroute_model', 'omnirouteModel', 'OMNIROUTE_MODEL');
+  const envModel = (env.OMNIROUTE_MODEL || '').trim();
+
+  let kvGhToken = readKvKey('githubToken', 'github_token', 'GITHUB_TOKEN');
+  let d1GhToken = readD1Key('github_token', 'githubToken', 'GITHUB_TOKEN');
+  const envGhToken = (env.GITHUB_TOKEN || '').trim();
+
+  let kvTitle = readKvKey('publicAppTitle', 'public_app_title', 'PUBLIC_APP_TITLE');
+  let d1Title = readD1Key('public_app_title', 'publicAppTitle', 'PUBLIC_APP_TITLE');
+  const envTitle = (env.PUBLIC_APP_TITLE || '').trim();
+
+  // Auto-persist não-padrão do env para KV e D1
   const autoPersistUpdates: Partial<RuntimeSettingsUpdates> = {};
 
-  const envAdminPassword = (env.ADMIN_PASSWORD || '').trim();
   if (
-    dbAdminPassword === undefined &&
-    envAdminPassword &&
-    envAdminPassword !== 'admin'
+    kvAdminPass === undefined &&
+    d1AdminPass === undefined &&
+    envAdminPass &&
+    envAdminPass !== 'admin'
   ) {
-    autoPersistUpdates.adminPassword = envAdminPassword;
-    dbAdminPassword = envAdminPassword;
+    autoPersistUpdates.adminPassword = envAdminPass;
+    d1AdminPass = envAdminPass;
   }
 
-  const envOmnirouteBaseUrl = (env.OMNIROUTE_BASE_URL || '').trim();
-  if (dbOmnirouteBaseUrl === undefined && envOmnirouteBaseUrl) {
-    autoPersistUpdates.omnirouteBaseUrl = envOmnirouteBaseUrl;
-    dbOmnirouteBaseUrl = envOmnirouteBaseUrl;
+  if (kvBaseUrl === undefined && d1BaseUrl === undefined && envBaseUrl) {
+    autoPersistUpdates.omnirouteBaseUrl = envBaseUrl;
+    d1BaseUrl = envBaseUrl;
   }
 
-  const envOmnirouteApiKey = (env.OMNIROUTE_API_KEY || '').trim();
-  if (dbOmnirouteApiKey === undefined && envOmnirouteApiKey) {
-    autoPersistUpdates.omnirouteApiKey = envOmnirouteApiKey;
-    dbOmnirouteApiKey = envOmnirouteApiKey;
+  if (kvApiKey === undefined && d1ApiKey === undefined && envApiKey) {
+    autoPersistUpdates.omnirouteApiKey = envApiKey;
+    d1ApiKey = envApiKey;
   }
 
-  const envGithubToken = (env.GITHUB_TOKEN || '').trim();
-  if (dbGithubToken === undefined && envGithubToken) {
-    autoPersistUpdates.githubToken = envGithubToken;
-    dbGithubToken = envGithubToken;
+  if (
+    kvModel === undefined &&
+    d1Model === undefined &&
+    envModel &&
+    envModel !== 'gemini-2.5-flash'
+  ) {
+    autoPersistUpdates.omnirouteModel = envModel;
+    d1Model = envModel;
+  }
+
+  if (kvGhToken === undefined && d1GhToken === undefined && envGhToken) {
+    autoPersistUpdates.githubToken = envGhToken;
+    d1GhToken = envGhToken;
+  }
+
+  if (
+    kvTitle === undefined &&
+    d1Title === undefined &&
+    envTitle &&
+    envTitle !== 'GitVisão • Catálogo Pega a Visão'
+  ) {
+    autoPersistUpdates.publicAppTitle = envTitle;
+    d1Title = envTitle;
   }
 
   if (Object.keys(autoPersistUpdates).length > 0) {
-    await saveRuntimeSettings(db, autoPersistUpdates);
+    await saveRuntimeSettings(db, autoPersistUpdates, env);
   }
 
+  // Precedência máxima: 1º KV -> 2º D1 -> 3º env -> 4º Defaults de fábrica
   const adminPassword =
-    (dbAdminPassword && dbAdminPassword.trim()) ||
-    envAdminPassword ||
+    (kvAdminPass !== undefined && kvAdminPass.trim()) ||
+    (d1AdminPass !== undefined && d1AdminPass.trim()) ||
+    envAdminPass ||
     'admin';
 
   const omnirouteBaseUrl =
-    dbOmnirouteBaseUrl !== undefined
-      ? dbOmnirouteBaseUrl.trim()
-      : envOmnirouteBaseUrl;
+    kvBaseUrl !== undefined
+      ? kvBaseUrl.trim()
+      : d1BaseUrl !== undefined
+        ? d1BaseUrl.trim()
+        : envBaseUrl;
 
   const omnirouteApiKey =
-    dbOmnirouteApiKey !== undefined
-      ? dbOmnirouteApiKey.trim()
-      : envOmnirouteApiKey;
+    kvApiKey !== undefined
+      ? kvApiKey.trim()
+      : d1ApiKey !== undefined
+        ? d1ApiKey.trim()
+        : envApiKey;
 
   const omnirouteModel =
-    (dbOmnirouteModel && dbOmnirouteModel.trim()) ||
-    (env.OMNIROUTE_MODEL && env.OMNIROUTE_MODEL.trim()) ||
+    (kvModel !== undefined && kvModel.trim()) ||
+    (d1Model !== undefined && d1Model.trim()) ||
+    envModel ||
     'gemini-2.5-flash';
 
   const githubToken =
-    dbGithubToken !== undefined
-      ? dbGithubToken.trim()
-      : envGithubToken;
+    kvGhToken !== undefined
+      ? kvGhToken.trim()
+      : d1GhToken !== undefined
+        ? d1GhToken.trim()
+        : envGhToken;
 
   const publicAppTitle =
-    (dbPublicAppTitle && dbPublicAppTitle.trim()) ||
-    (env.PUBLIC_APP_TITLE && env.PUBLIC_APP_TITLE.trim()) ||
+    (kvTitle !== undefined && kvTitle.trim()) ||
+    (d1Title !== undefined && d1Title.trim()) ||
+    envTitle ||
     'GitVisão • Catálogo Pega a Visão';
 
-  return {
+  // Sincroniza D1 para KV se KV ainda não possuía configurações salvas
+  if (kv && !kvSettings && d1SettingsMap.size > 0) {
+    try {
+      await kv.put(
+        'admin:settings',
+        JSON.stringify({
+          adminPassword,
+          omnirouteBaseUrl,
+          omnirouteApiKey,
+          omnirouteModel,
+          githubToken,
+          publicAppTitle
+        })
+      );
+    } catch (err) {
+      console.warn('Erro ao sincronizar D1 -> KV:', err);
+    }
+  }
+
+  const resolved: RuntimeSettings = {
     adminPassword,
     usingDefaultPassword: adminPassword === 'admin',
     omnirouteBaseUrl,
@@ -528,5 +884,13 @@ export async function getRuntimeSettings(
     githubToken,
     publicAppTitle
   };
-}
 
+  if (typeof db === 'object' && db !== null) {
+    settingsCache.set(db, {
+      settings: resolved,
+      expiresAt: Date.now() + SETTINGS_CACHE_TTL_MS
+    });
+  }
+
+  return resolved;
+}

@@ -1,0 +1,46 @@
+{
+  "lastRunAt": "2026-10-24T19:20:08.634Z",
+  "targetUrl": "https://vision.24hs.eu.org",
+  "records": {
+    "browseros-ai/browseros": {
+      "status": "skipped",
+      "repo": "browseros-ai/BrowserOS",
+      "reason": "skipped_already_exists",
+      "category": "Agentes & Automação IA",
+      "stars": 14100,
+      "updatedAt": "2026-10-24T19:19:53.125Z"
+    },
+    "arnasdon/wacrm": {
+      "status": "skipped",
+      "repo": "ArnasDon/wacrm",
+      "reason": "skipped_already_exists",
+      "category": "SaaS & CRM Self-Hosted",
+      "stars": 2600,
+      "updatedAt": "2026-10-24T19:19:56.353Z"
+    },
+    "alltomatos/superkuma": {
+      "status": "skipped",
+      "repo": "alltomatos/superkuma",
+      "reason": "skipped_already_exists",
+      "category": "Infra, Gateways & Edge",
+      "stars": 7,
+      "updatedAt": "2026-10-24T19:19:59.606Z"
+    },
+    "egonex-ai/understand-anything": {
+      "status": "skipped",
+      "repo": "Egonex-AI/Understand-Anything",
+      "reason": "skipped_already_exists",
+      "category": "Agentes & Automação IA",
+      "stars": 88049,
+      "updatedAt": "2026-10-24T19:20:05.422Z"
+    },
+    "deusdata/codebase-memory-mcp": {
+      "status": "skipped",
+      "repo": "DeusData/codebase-memory-mcp",
+      "reason": "skipped_already_exists",
+      "category": "Agentes & Automação IA",
+      "stars": 47398,
+      "updatedAt": "2026-10-24T19:20:08.634Z"
+    }
+  }
+}

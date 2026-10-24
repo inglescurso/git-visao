@@ -15,6 +15,8 @@ export type CategoryName =
 
 export interface Env {
   DB: D1Database;
+  GITVISAO_KV?: KVNamespace;
+  OMNI_KEYS?: KVNamespace;
   ADMIN_PASSWORD?: string;
   OMNIROUTE_BASE_URL?: string;
   OMNIROUTE_API_KEY?: string;

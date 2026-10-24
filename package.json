@@ -9,7 +9,9 @@
     "deploy": "wrangler deploy --keep-vars",
     "db:migrate:local": "wrangler d1 migrations apply git_visao_db --local",
     "db:migrate:remote": "wrangler d1 migrations apply git_visao_db --remote",
-    "test": "node --experimental-strip-types --test tests/worker.test.ts"
+    "test": "node --experimental-strip-types --test tests/worker.test.ts",
+    "import:all": "node --experimental-strip-types scripts/import_repos.ts",
+    "import:dry-run": "node --experimental-strip-types scripts/import_repos.ts --dry-run"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261024.1",

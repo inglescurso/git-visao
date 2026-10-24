@@ -1,0 +1,1572 @@
+[
+  {
+    "repo_key": "browseros-ai/browseros",
+    "full_name": "browseros-ai/BrowserOS",
+    "owner": "browseros-ai",
+    "name": "BrowserOS",
+    "repo_url": "https://github.com/browseros-ai/BrowserOS",
+    "url": "https://github.com/browseros-ai/BrowserOS",
+    "exists_in_catalog": true,
+    "status": "already_in_catalog"
+  },
+  {
+    "repo_key": "arnasdon/wacrm",
+    "full_name": "ArnasDon/wacrm",
+    "owner": "ArnasDon",
+    "name": "wacrm",
+    "repo_url": "https://github.com/ArnasDon/wacrm",
+    "url": "https://github.com/ArnasDon/wacrm",
+    "exists_in_catalog": true,
+    "status": "already_in_catalog"
+  },
+  {
+    "repo_key": "alltomatos/superkuma",
+    "full_name": "alltomatos/superkuma",
+    "owner": "alltomatos",
+    "name": "superkuma",
+    "repo_url": "https://github.com/alltomatos/superkuma",
+    "url": "https://github.com/alltomatos/superkuma",
+    "exists_in_catalog": true,
+    "status": "already_in_catalog"
+  },
+  {
+    "repo_key": "aitorroma/38cb467602d92ca8464f34a41ec2cce0",
+    "full_name": "aitorroma/38cb467602d92ca8464f34a41ec2cce0",
+    "owner": "aitorroma",
+    "name": "38cb467602d92ca8464f34a41ec2cce0",
+    "repo_url": "https://github.com/aitorroma/38cb467602d92ca8464f34a41ec2cce0",
+    "url": "https://github.com/aitorroma/38cb467602d92ca8464f34a41ec2cce0",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "egonex-ai/understand-anything",
+    "full_name": "Egonex-AI/Understand-Anything",
+    "owner": "Egonex-AI",
+    "name": "Understand-Anything",
+    "repo_url": "https://github.com/Egonex-AI/Understand-Anything",
+    "url": "https://github.com/Egonex-AI/Understand-Anything",
+    "exists_in_catalog": true,
+    "status": "already_in_catalog"
+  },
+  {
+    "repo_key": "deusdata/codebase-memory-mcp",
+    "full_name": "DeusData/codebase-memory-mcp",
+    "owner": "DeusData",
+    "name": "codebase-memory-mcp",
+    "repo_url": "https://github.com/DeusData/codebase-memory-mcp",
+    "url": "https://github.com/DeusData/codebase-memory-mcp",
+    "exists_in_catalog": true,
+    "status": "already_in_catalog"
+  },
+  {
+    "repo_key": "infisical/infisical",
+    "full_name": "Infisical/infisical",
+    "owner": "Infisical",
+    "name": "infisical",
+    "repo_url": "https://github.com/Infisical/infisical",
+    "url": "https://github.com/Infisical/infisical",
+    "exists_in_catalog": true,
+    "status": "already_in_catalog"
+  },
+  {
+    "repo_key": "bmad-code-org/bmad-method",
+    "full_name": "bmad-code-org/BMAD-METHOD",
+    "owner": "bmad-code-org",
+    "name": "BMAD-METHOD",
+    "repo_url": "https://github.com/bmad-code-org/BMAD-METHOD",
+    "url": "https://github.com/bmad-code-org/BMAD-METHOD",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "zlh-428/open-maestri",
+    "full_name": "zlh-428/open-maestri",
+    "owner": "zlh-428",
+    "name": "open-maestri",
+    "repo_url": "https://github.com/zlh-428/open-maestri",
+    "url": "https://github.com/zlh-428/open-maestri",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "baresip/baresip",
+    "full_name": "baresip/baresip",
+    "owner": "baresip",
+    "name": "baresip",
+    "repo_url": "https://github.com/baresip/baresip",
+    "url": "https://github.com/baresip/baresip",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "iofficeai/aionui",
+    "full_name": "iOfficeAI/AionUi",
+    "owner": "iOfficeAI",
+    "name": "AionUi",
+    "repo_url": "https://github.com/iOfficeAI/AionUi",
+    "url": "https://github.com/iOfficeAI/AionUi",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "microsoft/markitdown",
+    "full_name": "microsoft/markitdown",
+    "owner": "microsoft",
+    "name": "markitdown",
+    "repo_url": "https://github.com/microsoft/markitdown",
+    "url": "https://github.com/microsoft/markitdown",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "bytechefhq/bytechef",
+    "full_name": "bytechefhq/bytechef",
+    "owner": "bytechefhq",
+    "name": "bytechef",
+    "repo_url": "https://github.com/bytechefhq/bytechef",
+    "url": "https://github.com/bytechefhq/bytechef",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "decolua/9router",
+    "full_name": "decolua/9router",
+    "owner": "decolua",
+    "name": "9router",
+    "repo_url": "https://github.com/decolua/9router",
+    "url": "https://github.com/decolua/9router",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "grinev/opencode-telegram-bot",
+    "full_name": "grinev/opencode-telegram-bot",
+    "owner": "grinev",
+    "name": "opencode-telegram-bot",
+    "repo_url": "https://github.com/grinev/opencode-telegram-bot",
+    "url": "https://github.com/grinev/opencode-telegram-bot",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "evogix/evil-ollama",
+    "full_name": "evogix/Evil-Ollama",
+    "owner": "evogix",
+    "name": "Evil-Ollama",
+    "repo_url": "https://github.com/evogix/Evil-Ollama",
+    "url": "https://github.com/evogix/Evil-Ollama",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "studiocodeai/lya-studio-coder",
+    "full_name": "StudioCodeAI/Lya-Studio-Coder",
+    "owner": "StudioCodeAI",
+    "name": "Lya-Studio-Coder",
+    "repo_url": "https://github.com/StudioCodeAI/Lya-Studio-Coder",
+    "url": "https://github.com/StudioCodeAI/Lya-Studio-Coder",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "sidinsearch/superbrain",
+    "full_name": "sidinsearch/superbrain",
+    "owner": "sidinsearch",
+    "name": "superbrain",
+    "repo_url": "https://github.com/sidinsearch/superbrain",
+    "url": "https://github.com/sidinsearch/superbrain",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "alltomatos/voicebox",
+    "full_name": "alltomatos/voicebox",
+    "owner": "alltomatos",
+    "name": "voicebox",
+    "repo_url": "https://github.com/alltomatos/voicebox",
+    "url": "https://github.com/alltomatos/voicebox",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "alltomatos/waconector",
+    "full_name": "alltomatos/waconector",
+    "owner": "alltomatos",
+    "name": "waconector",
+    "repo_url": "https://github.com/alltomatos/waconector",
+    "url": "https://github.com/alltomatos/waconector",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "alltomatos/skills",
+    "full_name": "alltomatos/skills",
+    "owner": "alltomatos",
+    "name": "skills",
+    "repo_url": "https://github.com/alltomatos/skills",
+    "url": "https://github.com/alltomatos/skills",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "alltomatos/strix",
+    "full_name": "alltomatos/strix",
+    "owner": "alltomatos",
+    "name": "strix",
+    "repo_url": "https://github.com/alltomatos/strix",
+    "url": "https://github.com/alltomatos/strix",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "alltomatos/devops",
+    "full_name": "alltomatos/devops",
+    "owner": "alltomatos",
+    "name": "devops",
+    "repo_url": "https://github.com/alltomatos/devops",
+    "url": "https://github.com/alltomatos/devops",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "alltomatos/vibevoice",
+    "full_name": "alltomatos/VibeVoice",
+    "owner": "alltomatos",
+    "name": "VibeVoice",
+    "repo_url": "https://github.com/alltomatos/VibeVoice",
+    "url": "https://github.com/alltomatos/VibeVoice",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "alltomatos/loop",
+    "full_name": "alltomatos/loop",
+    "owner": "alltomatos",
+    "name": "loop",
+    "repo_url": "https://github.com/alltomatos/loop",
+    "url": "https://github.com/alltomatos/loop",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "drewthomasson/ebook2audiobook",
+    "full_name": "DrewThomasson/ebook2audiobook",
+    "owner": "DrewThomasson",
+    "name": "ebook2audiobook",
+    "repo_url": "https://github.com/DrewThomasson/ebook2audiobook",
+    "url": "https://github.com/DrewThomasson/ebook2audiobook",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "akitaonrails/ai-memory",
+    "full_name": "akitaonrails/ai-memory",
+    "owner": "akitaonrails",
+    "name": "ai-memory",
+    "repo_url": "https://github.com/akitaonrails/ai-memory",
+    "url": "https://github.com/akitaonrails/ai-memory",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "pedrofariasx/qwenproxy",
+    "full_name": "pedrofariasx/qwenproxy",
+    "owner": "pedrofariasx",
+    "name": "qwenproxy",
+    "repo_url": "https://github.com/pedrofariasx/qwenproxy",
+    "url": "https://github.com/pedrofariasx/qwenproxy",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "alltomatos/winutil",
+    "full_name": "alltomatos/winutil",
+    "owner": "alltomatos",
+    "name": "winutil",
+    "repo_url": "https://github.com/alltomatos/winutil",
+    "url": "https://github.com/alltomatos/winutil",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "alltomatos/opencode",
+    "full_name": "alltomatos/opencode",
+    "owner": "alltomatos",
+    "name": "opencode",
+    "repo_url": "https://github.com/alltomatos/opencode",
+    "url": "https://github.com/alltomatos/opencode",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "luispdoesai/openfunnel",
+    "full_name": "luispdoesai/openFunnel",
+    "owner": "luispdoesai",
+    "name": "openFunnel",
+    "repo_url": "https://github.com/luispdoesai/openFunnel",
+    "url": "https://github.com/luispdoesai/openFunnel",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "dfn-master/deepseek-harness",
+    "full_name": "DFN-master/deepseek-harness",
+    "owner": "DFN-master",
+    "name": "deepseek-harness",
+    "repo_url": "https://github.com/DFN-master/deepseek-harness",
+    "url": "https://github.com/DFN-master/deepseek-harness",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "primeintellect-ai/prime-agent",
+    "full_name": "PrimeIntellect-ai/prime-agent",
+    "owner": "PrimeIntellect-ai",
+    "name": "prime-agent",
+    "repo_url": "https://github.com/PrimeIntellect-ai/prime-agent",
+    "url": "https://github.com/PrimeIntellect-ai/prime-agent",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "muriel-gasparini/antigravity-account-switcher",
+    "full_name": "Muriel-Gasparini/antigravity-account-switcher",
+    "owner": "Muriel-Gasparini",
+    "name": "antigravity-account-switcher",
+    "repo_url": "https://github.com/Muriel-Gasparini/antigravity-account-switcher",
+    "url": "https://github.com/Muriel-Gasparini/antigravity-account-switcher",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "asamassekou10/ship-safe",
+    "full_name": "asamassekou10/ship-safe",
+    "owner": "asamassekou10",
+    "name": "ship-safe",
+    "repo_url": "https://github.com/asamassekou10/ship-safe",
+    "url": "https://github.com/asamassekou10/ship-safe",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "magnitudedev/magnitude",
+    "full_name": "magnitudedev/magnitude",
+    "owner": "magnitudedev",
+    "name": "magnitude",
+    "repo_url": "https://github.com/magnitudedev/magnitude",
+    "url": "https://github.com/magnitudedev/magnitude",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "mdigitalbh81/secops-orchestrator",
+    "full_name": "mdigitalbh81/secops-orchestrator",
+    "owner": "mdigitalbh81",
+    "name": "secops-orchestrator",
+    "repo_url": "https://github.com/mdigitalbh81/secops-orchestrator",
+    "url": "https://github.com/mdigitalbh81/secops-orchestrator",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "can1357/oh-my-pi",
+    "full_name": "can1357/oh-my-pi",
+    "owner": "can1357",
+    "name": "oh-my-pi",
+    "repo_url": "https://github.com/can1357/oh-my-pi",
+    "url": "https://github.com/can1357/oh-my-pi",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "tashfeenahmed/freellmapi",
+    "full_name": "tashfeenahmed/freellmapi",
+    "owner": "tashfeenahmed",
+    "name": "freellmapi",
+    "repo_url": "https://github.com/tashfeenahmed/freellmapi",
+    "url": "https://github.com/tashfeenahmed/freellmapi",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "multica-ai/multica",
+    "full_name": "multica-ai/multica",
+    "owner": "multica-ai",
+    "name": "multica",
+    "repo_url": "https://github.com/multica-ai/multica",
+    "url": "https://github.com/multica-ai/multica",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "rlucio01/whisper-app",
+    "full_name": "rlucio01/whisper-app",
+    "owner": "rlucio01",
+    "name": "whisper-app",
+    "repo_url": "https://github.com/rlucio01/whisper-app",
+    "url": "https://github.com/rlucio01/whisper-app",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "siddharthvaddem/openscreen",
+    "full_name": "siddharthvaddem/openscreen",
+    "owner": "siddharthvaddem",
+    "name": "openscreen",
+    "repo_url": "https://github.com/siddharthvaddem/openscreen",
+    "url": "https://github.com/siddharthvaddem/openscreen",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "dashenbibi/tutorial-generator",
+    "full_name": "dashenbibi/tutorial-generator",
+    "owner": "dashenbibi",
+    "name": "tutorial-generator",
+    "repo_url": "https://github.com/dashenbibi/tutorial-generator",
+    "url": "https://github.com/dashenbibi/tutorial-generator",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "martian0x80/framepipe",
+    "full_name": "martian0x80/framepipe",
+    "owner": "martian0x80",
+    "name": "framepipe",
+    "repo_url": "https://github.com/martian0x80/framepipe",
+    "url": "https://github.com/martian0x80/framepipe",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "remotion-dev/remotion",
+    "full_name": "remotion-dev/remotion",
+    "owner": "remotion-dev",
+    "name": "remotion",
+    "repo_url": "https://github.com/remotion-dev/remotion",
+    "url": "https://github.com/remotion-dev/remotion",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "openhands/openhands",
+    "full_name": "OpenHands/OpenHands",
+    "owner": "OpenHands",
+    "name": "OpenHands",
+    "repo_url": "https://github.com/OpenHands/OpenHands",
+    "url": "https://github.com/OpenHands/OpenHands",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "browser-use/browser-use",
+    "full_name": "browser-use/browser-use",
+    "owner": "browser-use",
+    "name": "browser-use",
+    "repo_url": "https://github.com/browser-use/browser-use",
+    "url": "https://github.com/browser-use/browser-use",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "alexsjones/llmfit",
+    "full_name": "AlexsJones/llmfit",
+    "owner": "AlexsJones",
+    "name": "llmfit",
+    "repo_url": "https://github.com/AlexsJones/llmfit",
+    "url": "https://github.com/AlexsJones/llmfit",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "afonsoft/skills",
+    "full_name": "afonsoft/skills",
+    "owner": "afonsoft",
+    "name": "skills",
+    "repo_url": "https://github.com/afonsoft/skills",
+    "url": "https://github.com/afonsoft/skills",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "donnemartin/system-design-primer",
+    "full_name": "donnemartin/system-design-primer",
+    "owner": "donnemartin",
+    "name": "system-design-primer",
+    "repo_url": "https://github.com/donnemartin/system-design-primer",
+    "url": "https://github.com/donnemartin/system-design-primer",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "sandeco/reversa",
+    "full_name": "sandeco/reversa",
+    "owner": "sandeco",
+    "name": "reversa",
+    "repo_url": "https://github.com/sandeco/reversa",
+    "url": "https://github.com/sandeco/reversa",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "affaan-m/ecc",
+    "full_name": "affaan-m/ecc",
+    "owner": "affaan-m",
+    "name": "ecc",
+    "repo_url": "https://github.com/affaan-m/ecc",
+    "url": "https://github.com/affaan-m/ecc",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "webadderallorg/recordly",
+    "full_name": "webadderallorg/recordly",
+    "owner": "webadderallorg",
+    "name": "recordly",
+    "repo_url": "https://github.com/webadderallorg/recordly",
+    "url": "https://github.com/webadderallorg/recordly",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "anomalyco/opencode",
+    "full_name": "anomalyco/opencode",
+    "owner": "anomalyco",
+    "name": "opencode",
+    "repo_url": "https://github.com/anomalyco/opencode",
+    "url": "https://github.com/anomalyco/opencode",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "stablyai/orca",
+    "full_name": "stablyai/orca",
+    "owner": "stablyai",
+    "name": "orca",
+    "repo_url": "https://github.com/stablyai/orca",
+    "url": "https://github.com/stablyai/orca",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "taruma/sceneflow",
+    "full_name": "taruma/SceneFlow",
+    "owner": "taruma",
+    "name": "SceneFlow",
+    "repo_url": "https://github.com/taruma/SceneFlow",
+    "url": "https://github.com/taruma/SceneFlow",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "erickythierry/transcreveapi",
+    "full_name": "erickythierry/transcreveAPI",
+    "owner": "erickythierry",
+    "name": "transcreveAPI",
+    "repo_url": "https://github.com/erickythierry/transcreveAPI",
+    "url": "https://github.com/erickythierry/transcreveAPI",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "brasil-fiscal/nfe",
+    "full_name": "brasil-fiscal/nfe",
+    "owner": "brasil-fiscal",
+    "name": "nfe",
+    "repo_url": "https://github.com/brasil-fiscal/nfe",
+    "url": "https://github.com/brasil-fiscal/nfe",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "mahanaicoach/google-maps-scraper-kit",
+    "full_name": "Mahanaicoach/google-maps-scraper-kit",
+    "owner": "Mahanaicoach",
+    "name": "google-maps-scraper-kit",
+    "repo_url": "https://github.com/Mahanaicoach/google-maps-scraper-kit",
+    "url": "https://github.com/Mahanaicoach/google-maps-scraper-kit",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "insforge/insforge",
+    "full_name": "InsForge/InsForge",
+    "owner": "InsForge",
+    "name": "InsForge",
+    "repo_url": "https://github.com/InsForge/InsForge",
+    "url": "https://github.com/InsForge/InsForge",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "tt-a1i/archify",
+    "full_name": "tt-a1i/archify",
+    "owner": "tt-a1i",
+    "name": "archify",
+    "repo_url": "https://github.com/tt-a1i/archify",
+    "url": "https://github.com/tt-a1i/archify",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "openvinotoolkit/openvino",
+    "full_name": "openvinotoolkit/openvino",
+    "owner": "openvinotoolkit",
+    "name": "openvino",
+    "repo_url": "https://github.com/openvinotoolkit/openvino",
+    "url": "https://github.com/openvinotoolkit/openvino",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "openvinotoolkit/openvino.genai",
+    "full_name": "openvinotoolkit/openvino.genai",
+    "owner": "openvinotoolkit",
+    "name": "openvino.genai",
+    "repo_url": "https://github.com/openvinotoolkit/openvino.genai",
+    "url": "https://github.com/openvinotoolkit/openvino.genai",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "engenheirodevideo/get-brolls",
+    "full_name": "engenheirodevideo/get-brolls",
+    "owner": "engenheirodevideo",
+    "name": "get-brolls",
+    "repo_url": "https://github.com/engenheirodevideo/get-brolls",
+    "url": "https://github.com/engenheirodevideo/get-brolls",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "agentesiaconceitto/usbrain",
+    "full_name": "AgentesIAConceitto/usbrain",
+    "owner": "AgentesIAConceitto",
+    "name": "usbrain",
+    "repo_url": "https://github.com/AgentesIAConceitto/usbrain",
+    "url": "https://github.com/AgentesIAConceitto/usbrain",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "mintplex-labs/anything-llm",
+    "full_name": "Mintplex-Labs/anything-llm",
+    "owner": "Mintplex-Labs",
+    "name": "anything-llm",
+    "repo_url": "https://github.com/Mintplex-Labs/anything-llm",
+    "url": "https://github.com/Mintplex-Labs/anything-llm",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "vinzdg/codenotch",
+    "full_name": "vinzdg/codenotch",
+    "owner": "vinzdg",
+    "name": "codenotch",
+    "repo_url": "https://github.com/vinzdg/codenotch",
+    "url": "https://github.com/vinzdg/codenotch",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "yashab-cyber/hackgpt",
+    "full_name": "yashab-cyber/HackGpt",
+    "owner": "yashab-cyber",
+    "name": "HackGpt",
+    "repo_url": "https://github.com/yashab-cyber/HackGpt",
+    "url": "https://github.com/yashab-cyber/HackGpt",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "salesagility/suitecrm",
+    "full_name": "salesagility/SuiteCRM",
+    "owner": "salesagility",
+    "name": "SuiteCRM",
+    "repo_url": "https://github.com/salesagility/SuiteCRM",
+    "url": "https://github.com/salesagility/SuiteCRM",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "twentyhq/twenty",
+    "full_name": "twentyhq/twenty",
+    "owner": "twentyhq",
+    "name": "twenty",
+    "repo_url": "https://github.com/twentyhq/twenty",
+    "url": "https://github.com/twentyhq/twenty",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "vectorize-io/hindsight",
+    "full_name": "vectorize-io/hindsight",
+    "owner": "vectorize-io",
+    "name": "hindsight",
+    "repo_url": "https://github.com/vectorize-io/hindsight",
+    "url": "https://github.com/vectorize-io/hindsight",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "caiomioto2/pluggy-mcp-starter",
+    "full_name": "caiomioto2/pluggy-mcp-starter",
+    "owner": "caiomioto2",
+    "name": "pluggy-mcp-starter",
+    "repo_url": "https://github.com/caiomioto2/pluggy-mcp-starter",
+    "url": "https://github.com/caiomioto2/pluggy-mcp-starter",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "heygen-com/hyperframes",
+    "full_name": "heygen-com/hyperframes",
+    "owner": "heygen-com",
+    "name": "hyperframes",
+    "repo_url": "https://github.com/heygen-com/hyperframes",
+    "url": "https://github.com/heygen-com/hyperframes",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "tamaratran/fast-jev-compaction",
+    "full_name": "tamaratran/fast-jev-compaction",
+    "owner": "tamaratran",
+    "name": "fast-jev-compaction",
+    "repo_url": "https://github.com/tamaratran/fast-jev-compaction",
+    "url": "https://github.com/tamaratran/fast-jev-compaction",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "webmachinelearning/webmcp",
+    "full_name": "webmachinelearning/webmcp",
+    "owner": "webmachinelearning",
+    "name": "webmcp",
+    "repo_url": "https://github.com/webmachinelearning/webmcp",
+    "url": "https://github.com/webmachinelearning/webmcp",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "leninejunior/engrene-memory-bridge",
+    "full_name": "leninejunior/engrene-memory-bridge",
+    "owner": "leninejunior",
+    "name": "engrene-memory-bridge",
+    "repo_url": "https://github.com/leninejunior/engrene-memory-bridge",
+    "url": "https://github.com/leninejunior/engrene-memory-bridge",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "samucamg/veroroute-edge",
+    "full_name": "samucamg/veroroute-edge",
+    "owner": "samucamg",
+    "name": "veroroute-edge",
+    "repo_url": "https://github.com/samucamg/veroroute-edge",
+    "url": "https://github.com/samucamg/veroroute-edge",
+    "exists_in_catalog": true,
+    "status": "already_in_catalog"
+  },
+  {
+    "repo_key": "vxcontrol/pentagi",
+    "full_name": "vxcontrol/pentagi",
+    "owner": "vxcontrol",
+    "name": "pentagi",
+    "repo_url": "https://github.com/vxcontrol/pentagi",
+    "url": "https://github.com/vxcontrol/pentagi",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "dzhng/jevgrep",
+    "full_name": "dzhng/jevgrep",
+    "owner": "dzhng",
+    "name": "jevgrep",
+    "repo_url": "https://github.com/dzhng/jevgrep",
+    "url": "https://github.com/dzhng/jevgrep",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "shadowhackrs/gmail-account-creator",
+    "full_name": "ShadowHackrs/gmail-account-creator",
+    "owner": "ShadowHackrs",
+    "name": "gmail-account-creator",
+    "repo_url": "https://github.com/ShadowHackrs/gmail-account-creator",
+    "url": "https://github.com/ShadowHackrs/gmail-account-creator",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "mbarizao/paleonia",
+    "full_name": "mbarizao/PaleonIA",
+    "owner": "mbarizao",
+    "name": "PaleonIA",
+    "repo_url": "https://github.com/mbarizao/PaleonIA",
+    "url": "https://github.com/mbarizao/PaleonIA",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "lampese/codex-switcher",
+    "full_name": "Lampese/codex-switcher",
+    "owner": "Lampese",
+    "name": "codex-switcher",
+    "repo_url": "https://github.com/Lampese/codex-switcher",
+    "url": "https://github.com/Lampese/codex-switcher",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "produtoramaxvision/decktech",
+    "full_name": "produtoramaxvision/DeckTech",
+    "owner": "produtoramaxvision",
+    "name": "DeckTech",
+    "repo_url": "https://github.com/produtoramaxvision/DeckTech",
+    "url": "https://github.com/produtoramaxvision/DeckTech",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "fastapi/fastapi",
+    "full_name": "fastapi/fastapi",
+    "owner": "fastapi",
+    "name": "fastapi",
+    "repo_url": "https://github.com/fastapi/fastapi",
+    "url": "https://github.com/fastapi/fastapi",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "obra/superpowers",
+    "full_name": "obra/superpowers",
+    "owner": "obra",
+    "name": "superpowers",
+    "repo_url": "https://github.com/obra/superpowers",
+    "url": "https://github.com/obra/superpowers",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "muriel-gasparini/ban4life",
+    "full_name": "Muriel-Gasparini/ban4life",
+    "owner": "Muriel-Gasparini",
+    "name": "ban4life",
+    "repo_url": "https://github.com/Muriel-Gasparini/ban4life",
+    "url": "https://github.com/Muriel-Gasparini/ban4life",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "gitroomhq/postiz-app",
+    "full_name": "gitroomhq/postiz-app",
+    "owner": "gitroomhq",
+    "name": "postiz-app",
+    "repo_url": "https://github.com/gitroomhq/postiz-app",
+    "url": "https://github.com/gitroomhq/postiz-app",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "heyputer/builder",
+    "full_name": "HeyPuter/builder",
+    "owner": "HeyPuter",
+    "name": "builder",
+    "repo_url": "https://github.com/HeyPuter/builder",
+    "url": "https://github.com/HeyPuter/builder",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "muriel-gasparini/dya",
+    "full_name": "Muriel-Gasparini/dya",
+    "owner": "Muriel-Gasparini",
+    "name": "dya",
+    "repo_url": "https://github.com/Muriel-Gasparini/dya",
+    "url": "https://github.com/Muriel-Gasparini/dya",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "louis-cfm/coucou",
+    "full_name": "Louis-CFM/coucou",
+    "owner": "Louis-CFM",
+    "name": "coucou",
+    "repo_url": "https://github.com/Louis-CFM/coucou",
+    "url": "https://github.com/Louis-CFM/coucou",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "ricardopenadev/deskpanel",
+    "full_name": "RicardoPenaDev/DeskPanel",
+    "owner": "RicardoPenaDev",
+    "name": "DeskPanel",
+    "repo_url": "https://github.com/RicardoPenaDev/DeskPanel",
+    "url": "https://github.com/RicardoPenaDev/DeskPanel",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "devton/motion-director",
+    "full_name": "devton/motion-director",
+    "owner": "devton",
+    "name": "motion-director",
+    "repo_url": "https://github.com/devton/motion-director",
+    "url": "https://github.com/devton/motion-director",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "aitorroma/nimdeploy",
+    "full_name": "aitorroma/nimdeploy",
+    "owner": "aitorroma",
+    "name": "nimdeploy",
+    "repo_url": "https://github.com/aitorroma/nimdeploy",
+    "url": "https://github.com/aitorroma/nimdeploy",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "morluto/rea",
+    "full_name": "morluto/rea",
+    "owner": "morluto",
+    "name": "rea",
+    "repo_url": "https://github.com/morluto/rea",
+    "url": "https://github.com/morluto/rea",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "gtai-1/flow-mcp",
+    "full_name": "GTAI-1/flow-mcp",
+    "owner": "GTAI-1",
+    "name": "flow-mcp",
+    "repo_url": "https://github.com/GTAI-1/flow-mcp",
+    "url": "https://github.com/GTAI-1/flow-mcp",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "ffroliva/gflow-cli",
+    "full_name": "ffroliva/gflow-cli",
+    "owner": "ffroliva",
+    "name": "gflow-cli",
+    "repo_url": "https://github.com/ffroliva/gflow-cli",
+    "url": "https://github.com/ffroliva/gflow-cli",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "mnfst/awesome-free-llm-apis",
+    "full_name": "mnfst/awesome-free-llm-apis",
+    "owner": "mnfst",
+    "name": "awesome-free-llm-apis",
+    "repo_url": "https://github.com/mnfst/awesome-free-llm-apis",
+    "url": "https://github.com/mnfst/awesome-free-llm-apis",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "nandhakishorm/laya",
+    "full_name": "NandhaKishorM/laya",
+    "owner": "NandhaKishorM",
+    "name": "laya",
+    "repo_url": "https://github.com/NandhaKishorM/laya",
+    "url": "https://github.com/NandhaKishorM/laya",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "ghostpad/ghostpad",
+    "full_name": "ghostpad/ghostpad",
+    "owner": "ghostpad",
+    "name": "ghostpad",
+    "repo_url": "https://github.com/ghostpad/ghostpad",
+    "url": "https://github.com/ghostpad/ghostpad",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "storytold/craft-launcher",
+    "full_name": "storytold/craft-launcher",
+    "owner": "storytold",
+    "name": "craft-launcher",
+    "repo_url": "https://github.com/storytold/craft-launcher",
+    "url": "https://github.com/storytold/craft-launcher",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "yc-software/qm",
+    "full_name": "yc-software/qm",
+    "owner": "yc-software",
+    "name": "qm",
+    "repo_url": "https://github.com/yc-software/qm",
+    "url": "https://github.com/yc-software/qm",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "andyrewlee/awesome-agent-orchestrators",
+    "full_name": "andyrewlee/awesome-agent-orchestrators",
+    "owner": "andyrewlee",
+    "name": "awesome-agent-orchestrators",
+    "repo_url": "https://github.com/andyrewlee/awesome-agent-orchestrators",
+    "url": "https://github.com/andyrewlee/awesome-agent-orchestrators",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "storytold/soundcraft",
+    "full_name": "storytold/soundcraft",
+    "owner": "storytold",
+    "name": "soundcraft",
+    "repo_url": "https://github.com/storytold/soundcraft",
+    "url": "https://github.com/storytold/soundcraft",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "opencut-app/opencut",
+    "full_name": "OpenCut-app/OpenCut",
+    "owner": "OpenCut-app",
+    "name": "OpenCut",
+    "repo_url": "https://github.com/OpenCut-app/OpenCut",
+    "url": "https://github.com/OpenCut-app/OpenCut",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "storytold/vectorcraft",
+    "full_name": "storytold/vectorcraft",
+    "owner": "storytold",
+    "name": "vectorcraft",
+    "repo_url": "https://github.com/storytold/vectorcraft",
+    "url": "https://github.com/storytold/vectorcraft",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "zhaoxuya520/reverse-skill",
+    "full_name": "zhaoxuya520/reverse-skill",
+    "owner": "zhaoxuya520",
+    "name": "reverse-skill",
+    "repo_url": "https://github.com/zhaoxuya520/reverse-skill",
+    "url": "https://github.com/zhaoxuya520/reverse-skill",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "crmne/spotifast",
+    "full_name": "crmne/spotifast",
+    "owner": "crmne",
+    "name": "spotifast",
+    "repo_url": "https://github.com/crmne/spotifast",
+    "url": "https://github.com/crmne/spotifast",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "thu-maic/openmaic",
+    "full_name": "THU-MAIC/OpenMAIC",
+    "owner": "THU-MAIC",
+    "name": "OpenMAIC",
+    "repo_url": "https://github.com/THU-MAIC/OpenMAIC",
+    "url": "https://github.com/THU-MAIC/OpenMAIC",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "crmne/zapfast",
+    "full_name": "crmne/zapfast",
+    "owner": "crmne",
+    "name": "zapfast",
+    "repo_url": "https://github.com/crmne/zapfast",
+    "url": "https://github.com/crmne/zapfast",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "afonsoft/open-webui",
+    "full_name": "afonsoft/open-webui",
+    "owner": "afonsoft",
+    "name": "open-webui",
+    "repo_url": "https://github.com/afonsoft/open-webui",
+    "url": "https://github.com/afonsoft/open-webui",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "daslearning-org/opensms",
+    "full_name": "daslearning-org/OpenSMS",
+    "owner": "daslearning-org",
+    "name": "OpenSMS",
+    "repo_url": "https://github.com/daslearning-org/OpenSMS",
+    "url": "https://github.com/daslearning-org/OpenSMS",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "zerolu/awesome-seedance",
+    "full_name": "ZeroLu/awesome-seedance",
+    "owner": "ZeroLu",
+    "name": "awesome-seedance",
+    "repo_url": "https://github.com/ZeroLu/awesome-seedance",
+    "url": "https://github.com/ZeroLu/awesome-seedance",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "mrifqidaffaaditya/wa-akg",
+    "full_name": "mrifqidaffaaditya/WA-AKG",
+    "owner": "mrifqidaffaaditya",
+    "name": "WA-AKG",
+    "repo_url": "https://github.com/mrifqidaffaaditya/WA-AKG",
+    "url": "https://github.com/mrifqidaffaaditya/WA-AKG",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "pleaseprompto/notebooklm-skill",
+    "full_name": "PleasePrompto/notebooklm-skill",
+    "owner": "PleasePrompto",
+    "name": "notebooklm-skill",
+    "repo_url": "https://github.com/PleasePrompto/notebooklm-skill",
+    "url": "https://github.com/PleasePrompto/notebooklm-skill",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "google-research/harness2",
+    "full_name": "google-research/harness2",
+    "owner": "google-research",
+    "name": "harness2",
+    "repo_url": "https://github.com/google-research/harness2",
+    "url": "https://github.com/google-research/harness2",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "jacob-bd/gemini-notebook-mcp-cli",
+    "full_name": "jacob-bd/gemini-notebook-mcp-cli",
+    "owner": "jacob-bd",
+    "name": "gemini-notebook-mcp-cli",
+    "repo_url": "https://github.com/jacob-bd/gemini-notebook-mcp-cli",
+    "url": "https://github.com/jacob-bd/gemini-notebook-mcp-cli",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "lfnovo/open-notebook",
+    "full_name": "lfnovo/open-notebook",
+    "owner": "lfnovo",
+    "name": "open-notebook",
+    "repo_url": "https://github.com/lfnovo/open-notebook",
+    "url": "https://github.com/lfnovo/open-notebook",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "coplaydev/unity-mcp",
+    "full_name": "CoplayDev/unity-mcp",
+    "owner": "CoplayDev",
+    "name": "unity-mcp",
+    "repo_url": "https://github.com/CoplayDev/unity-mcp",
+    "url": "https://github.com/CoplayDev/unity-mcp",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "nationalsecurityagency/ghidra",
+    "full_name": "NationalSecurityAgency/ghidra",
+    "owner": "NationalSecurityAgency",
+    "name": "ghidra",
+    "repo_url": "https://github.com/NationalSecurityAgency/ghidra",
+    "url": "https://github.com/NationalSecurityAgency/ghidra",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "msitarzewski/agency-agents",
+    "full_name": "msitarzewski/agency-agents",
+    "owner": "msitarzewski",
+    "name": "agency-agents",
+    "repo_url": "https://github.com/msitarzewski/agency-agents",
+    "url": "https://github.com/msitarzewski/agency-agents",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "google/artemis",
+    "full_name": "google/artemis",
+    "owner": "google",
+    "name": "artemis",
+    "repo_url": "https://github.com/google/artemis",
+    "url": "https://github.com/google/artemis",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "dietrichgebert/ponytail",
+    "full_name": "DietrichGebert/ponytail",
+    "owner": "DietrichGebert",
+    "name": "ponytail",
+    "repo_url": "https://github.com/DietrichGebert/ponytail",
+    "url": "https://github.com/DietrichGebert/ponytail",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "gathin23/cleanyourtv",
+    "full_name": "Gathin23/cleanyourtv",
+    "owner": "Gathin23",
+    "name": "cleanyourtv",
+    "repo_url": "https://github.com/Gathin23/cleanyourtv",
+    "url": "https://github.com/Gathin23/cleanyourtv",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "agricidaniel/claude-ads",
+    "full_name": "AgriciDaniel/claude-ads",
+    "owner": "AgriciDaniel",
+    "name": "claude-ads",
+    "repo_url": "https://github.com/AgriciDaniel/claude-ads",
+    "url": "https://github.com/AgriciDaniel/claude-ads",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "copilotkit/opendots",
+    "full_name": "CopilotKit/OpenDots",
+    "owner": "CopilotKit",
+    "name": "OpenDots",
+    "repo_url": "https://github.com/CopilotKit/OpenDots",
+    "url": "https://github.com/CopilotKit/OpenDots",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "aldinokemal/go-whatsapp-web-multidevice",
+    "full_name": "aldinokemal/go-whatsapp-web-multidevice",
+    "owner": "aldinokemal",
+    "name": "go-whatsapp-web-multidevice",
+    "repo_url": "https://github.com/aldinokemal/go-whatsapp-web-multidevice",
+    "url": "https://github.com/aldinokemal/go-whatsapp-web-multidevice",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "muriel-gasparini/sourcemap-downloader",
+    "full_name": "Muriel-Gasparini/sourcemap-downloader",
+    "owner": "Muriel-Gasparini",
+    "name": "sourcemap-downloader",
+    "repo_url": "https://github.com/Muriel-Gasparini/sourcemap-downloader",
+    "url": "https://github.com/Muriel-Gasparini/sourcemap-downloader",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "cheaper-inference/omniroute",
+    "full_name": "cheaper-inference/OmniRoute",
+    "owner": "cheaper-inference",
+    "name": "OmniRoute",
+    "repo_url": "https://github.com/cheaper-inference/OmniRoute",
+    "url": "https://github.com/cheaper-inference/OmniRoute",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "ctresb/leis",
+    "full_name": "ctresb/leis",
+    "owner": "ctresb",
+    "name": "leis",
+    "repo_url": "https://github.com/ctresb/leis",
+    "url": "https://github.com/ctresb/leis",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "mcp-brasil/mcp-brasil",
+    "full_name": "mcp-brasil/mcp-brasil",
+    "owner": "mcp-brasil",
+    "name": "mcp-brasil",
+    "repo_url": "https://github.com/mcp-brasil/mcp-brasil",
+    "url": "https://github.com/mcp-brasil/mcp-brasil",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "garrytan/gbrain",
+    "full_name": "garrytan/gbrain",
+    "owner": "garrytan",
+    "name": "gbrain",
+    "repo_url": "https://github.com/garrytan/gbrain",
+    "url": "https://github.com/garrytan/gbrain",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "debpalash/voicestudio",
+    "full_name": "debpalash/voicestudio",
+    "owner": "debpalash",
+    "name": "voicestudio",
+    "repo_url": "https://github.com/debpalash/voicestudio",
+    "url": "https://github.com/debpalash/voicestudio",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "github/codeql",
+    "full_name": "github/codeql",
+    "owner": "github",
+    "name": "codeql",
+    "repo_url": "https://github.com/github/codeql",
+    "url": "https://github.com/github/codeql",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "hkuds/vibe-trading",
+    "full_name": "HKUDS/Vibe-Trading",
+    "owner": "HKUDS",
+    "name": "Vibe-Trading",
+    "repo_url": "https://github.com/HKUDS/Vibe-Trading",
+    "url": "https://github.com/HKUDS/Vibe-Trading",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "shiaho777/web-to-app",
+    "full_name": "shiaho777/web-to-app",
+    "owner": "shiaho777",
+    "name": "web-to-app",
+    "repo_url": "https://github.com/shiaho777/web-to-app",
+    "url": "https://github.com/shiaho777/web-to-app",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "rafacpti23/orca-control-skill",
+    "full_name": "rafacpti23/orca-control-skill",
+    "owner": "rafacpti23",
+    "name": "orca-control-skill",
+    "repo_url": "https://github.com/rafacpti23/orca-control-skill",
+    "url": "https://github.com/rafacpti23/orca-control-skill",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "koala73/worldmonitor",
+    "full_name": "koala73/worldmonitor",
+    "owner": "koala73",
+    "name": "worldmonitor",
+    "repo_url": "https://github.com/koala73/worldmonitor",
+    "url": "https://github.com/koala73/worldmonitor",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "max-sixty/worktrunk",
+    "full_name": "max-sixty/worktrunk",
+    "owner": "max-sixty",
+    "name": "worktrunk",
+    "repo_url": "https://github.com/max-sixty/worktrunk",
+    "url": "https://github.com/max-sixty/worktrunk",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "nousresearch/hermes-agent",
+    "full_name": "nousresearch/hermes-agent",
+    "owner": "nousresearch",
+    "name": "hermes-agent",
+    "repo_url": "https://github.com/nousresearch/hermes-agent",
+    "url": "https://github.com/nousresearch/hermes-agent",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "tauricresearch/tradingagents",
+    "full_name": "TauricResearch/TradingAgents",
+    "owner": "TauricResearch",
+    "name": "TradingAgents",
+    "repo_url": "https://github.com/TauricResearch/TradingAgents",
+    "url": "https://github.com/TauricResearch/TradingAgents",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "actus7/mousex",
+    "full_name": "actus7/mousex",
+    "owner": "actus7",
+    "name": "mousex",
+    "repo_url": "https://github.com/actus7/mousex",
+    "url": "https://github.com/actus7/mousex",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "anthropics/claude-code",
+    "full_name": "anthropics/claude-code",
+    "owner": "anthropics",
+    "name": "claude-code",
+    "repo_url": "https://github.com/anthropics/claude-code",
+    "url": "https://github.com/anthropics/claude-code",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "anthropics/skills",
+    "full_name": "anthropics/skills",
+    "owner": "anthropics",
+    "name": "skills",
+    "repo_url": "https://github.com/anthropics/skills",
+    "url": "https://github.com/anthropics/skills",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "cloudflare/security-audit-skill",
+    "full_name": "cloudflare/security-audit-skill",
+    "owner": "cloudflare",
+    "name": "security-audit-skill",
+    "repo_url": "https://github.com/cloudflare/security-audit-skill",
+    "url": "https://github.com/cloudflare/security-audit-skill",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "impa365/setupimpa",
+    "full_name": "impa365/setupimpa",
+    "owner": "impa365",
+    "name": "setupimpa",
+    "repo_url": "https://github.com/impa365/setupimpa",
+    "url": "https://github.com/impa365/setupimpa",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "snailsploit/claude-red",
+    "full_name": "SnailSploit/Claude-Red",
+    "owner": "SnailSploit",
+    "name": "Claude-Red",
+    "repo_url": "https://github.com/SnailSploit/Claude-Red",
+    "url": "https://github.com/SnailSploit/Claude-Red",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "openai/whisper",
+    "full_name": "openai/whisper",
+    "owner": "openai",
+    "name": "whisper",
+    "repo_url": "https://github.com/openai/whisper",
+    "url": "https://github.com/openai/whisper",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "cjpais/handy",
+    "full_name": "cjpais/Handy",
+    "owner": "cjpais",
+    "name": "Handy",
+    "repo_url": "https://github.com/cjpais/Handy",
+    "url": "https://github.com/cjpais/Handy",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "sato-note/reverse-engineer-ai-video-tutorial",
+    "full_name": "sato-note/reverse-engineer-ai-video-tutorial",
+    "owner": "sato-note",
+    "name": "reverse-engineer-ai-video-tutorial",
+    "repo_url": "https://github.com/sato-note/reverse-engineer-ai-video-tutorial",
+    "url": "https://github.com/sato-note/reverse-engineer-ai-video-tutorial",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "paldom/video-to-skill",
+    "full_name": "paldom/video-to-skill",
+    "owner": "paldom",
+    "name": "video-to-skill",
+    "repo_url": "https://github.com/paldom/video-to-skill",
+    "url": "https://github.com/paldom/video-to-skill",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "jona/scrub-cli",
+    "full_name": "jona/scrub-cli",
+    "owner": "jona",
+    "name": "scrub-cli",
+    "repo_url": "https://github.com/jona/scrub-cli",
+    "url": "https://github.com/jona/scrub-cli",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "melgarafael/deskcommcrm",
+    "full_name": "melgarafael/DeskcommCRM",
+    "owner": "melgarafael",
+    "name": "DeskcommCRM",
+    "repo_url": "https://github.com/melgarafael/DeskcommCRM",
+    "url": "https://github.com/melgarafael/DeskcommCRM",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "data-privacy-stack/presidio",
+    "full_name": "data-privacy-stack/presidio",
+    "owner": "data-privacy-stack",
+    "name": "presidio",
+    "repo_url": "https://github.com/data-privacy-stack/presidio",
+    "url": "https://github.com/data-privacy-stack/presidio",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "deskflow/deskflow",
+    "full_name": "deskflow/deskflow",
+    "owner": "deskflow",
+    "name": "deskflow",
+    "repo_url": "https://github.com/deskflow/deskflow",
+    "url": "https://github.com/deskflow/deskflow",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "samucamg/gemini-chat-overdrive",
+    "full_name": "samucamg/gemini-chat-overdrive",
+    "owner": "samucamg",
+    "name": "gemini-chat-overdrive",
+    "repo_url": "https://github.com/samucamg/gemini-chat-overdrive",
+    "url": "https://github.com/samucamg/gemini-chat-overdrive",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "ruvnet/ruflo",
+    "full_name": "ruvnet/ruflo",
+    "owner": "ruvnet",
+    "name": "ruflo",
+    "repo_url": "https://github.com/ruvnet/ruflo",
+    "url": "https://github.com/ruvnet/ruflo",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  },
+  {
+    "repo_key": "crom-org/kdenlive-mcp-plus",
+    "full_name": "crom-org/kdenlive-mcp-plus",
+    "owner": "crom-org",
+    "name": "kdenlive-mcp-plus",
+    "repo_url": "https://github.com/crom-org/kdenlive-mcp-plus",
+    "url": "https://github.com/crom-org/kdenlive-mcp-plus",
+    "exists_in_catalog": false,
+    "status": "pending_import"
+  }
+]

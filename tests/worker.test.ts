@@ -14,6 +14,50 @@ import { generateFallbackSummary } from '../src/ai.ts';
 import { extractAdminPassword, verifyAdminPassword } from '../src/auth.ts';
 import worker from '../src/index.ts';
 import type { Env, GitHubRepoMetadata, RepoRecord } from '../src/types.ts';
+import {
+  ensureDatabaseInitialized,
+  findRepoByKey,
+  getRuntimeSettings,
+  invalidateSettingsCache,
+  saveRuntimeSettings,
+  type SerializedRepo
+} from '../src/db.ts';
+
+function createInMemoryKV(): KVNamespace {
+  const store = new Map<string, string>();
+
+  return {
+    async get(key: string, type?: string) {
+      const val = store.get(key);
+      if (val === undefined) return null;
+      if (type === 'json') {
+        try {
+          return JSON.parse(val);
+        } catch {
+          return null;
+        }
+      }
+      return val;
+    },
+    async put(key: string, value: string) {
+      store.set(key, String(value));
+    },
+    async delete(key: string) {
+      store.delete(key);
+    },
+    async list(options?: { prefix?: string }) {
+      const prefix = options?.prefix ?? '';
+      const keys = Array.from(store.keys())
+        .filter((k) => k.startsWith(prefix))
+        .map((name) => ({ name }));
+      return {
+        keys,
+        list_complete: true,
+        cursor: ''
+      };
+    }
+  } as unknown as KVNamespace;
+}
 
 function createInMemoryD1(): D1Database {
   const rows = new Map<string, RepoRecord>();
@@ -90,8 +134,8 @@ function createInMemoryD1(): D1Database {
             summary_text: String(boundArgs[24] ?? ''),
             punchline: String(boundArgs[25] ?? ''),
             whatsapp_text: String(boundArgs[26] ?? ''),
-            created_at: existing ? existing.created_at : now,
-            updated_at: now
+            created_at: boundArgs[27] ? String(boundArgs[27]) : (existing ? existing.created_at : now),
+            updated_at: boundArgs[28] ? String(boundArgs[28]) : now
           };
 
           rows.set(repoKey, record);
@@ -317,6 +361,8 @@ test('3. Autenticação de admin (verifyAdminPassword e extractAdminPassword)', 
 test('4. Rotas da API do Worker (/api/health, /api/repos, /api/check e POST /api/repos com cache e senha)', async () => {
   const env: Env = {
     DB: createInMemoryD1(),
+    GITVISAO_KV: createInMemoryKV(),
+    OMNI_KEYS: createInMemoryKV(),
     ADMIN_PASSWORD: 'admin-visao-secret',
     OMNIROUTE_MODEL: 'gemini-2.5-flash',
     PUBLIC_APP_TITLE: 'GitVisão Teste'
@@ -465,9 +511,11 @@ test('4. Rotas da API do Worker (/api/health, /api/repos, /api/check e POST /api
 });
 
 test('5. Painel Zero-CLI (/api/settings): senha padrão "admin" inicial e persistência de senha + OmniRoute no D1', async () => {
-  // Instalação limpa sem variáveis de ambiente (apenas banco D1)
+  // Instalação limpa sem variáveis de ambiente (apenas banco D1 e KVs vazios)
   const cleanEnv: Env = {
-    DB: createInMemoryD1()
+    DB: createInMemoryD1(),
+    GITVISAO_KV: createInMemoryKV(),
+    OMNI_KEYS: createInMemoryKV()
   };
 
   // 1. Verifica que instalação limpa usa a senha padrão "admin" e omnirouteConfigured = false
@@ -571,5 +619,160 @@ test('5. Painel Zero-CLI (/api/settings): senha padrão "admin" inicial e persis
   assert.equal(finalHealth.usingDefaultPassword, false);
   assert.equal(finalHealth.omnirouteConfigured, true);
   assert.equal(finalHealth.omnirouteModel, 'gemini-2.5-pro');
+});
+
+test('6. Persistência Híbrida (KV + D1): precedência do KV sobre env após reset e restauração de backup do KV para D1 vazio', async () => {
+  // A. Precedência de RuntimeSettings no KV sobre env e sobrevivência a reset de variáveis
+  const kv = createInMemoryKV();
+  const d1 = createInMemoryD1();
+  const envWithCustomVar: Env = {
+    DB: d1,
+    GITVISAO_KV: kv,
+    OMNI_KEYS: createInMemoryKV(),
+    ADMIN_PASSWORD: 'env-initial-pass',
+    OMNIROUTE_MODEL: 'gemini-2.5-flash',
+    PUBLIC_APP_TITLE: 'GitVisão Env Title'
+  };
+
+  await ensureDatabaseInitialized(envWithCustomVar.DB, envWithCustomVar);
+
+  // Salva configurações personalizadas (deve persistir no D1 E no KV)
+  await saveRuntimeSettings(
+    envWithCustomVar.DB,
+    {
+      adminPassword: 'kv-super-secret-pass',
+      omnirouteModel: 'gemini-2.5-pro',
+      publicAppTitle: 'GitVisão Persistido no KV'
+    },
+    envWithCustomVar
+  );
+
+  // Valida que o KV gravou as chaves em 'admin:settings'
+  const rawKvSettings = await kv.get('admin:settings');
+  assert.ok(rawKvSettings, 'Configurações devem estar persistidas em admin:settings no KV');
+  const parsedKvSettings = JSON.parse(rawKvSettings as string);
+  assert.equal(parsedKvSettings.adminPassword, 'kv-super-secret-pass');
+  assert.equal(parsedKvSettings.omnirouteModel, 'gemini-2.5-pro');
+  assert.equal(parsedKvSettings.publicAppTitle, 'GitVisão Persistido no KV');
+
+  // Simula um reset de variáveis de ambiente (ex: Deploy do GitHub / Sync Fork que restaura defaults no env)
+  invalidateSettingsCache();
+  const envAfterReset: Env = {
+    DB: d1,
+    GITVISAO_KV: kv,
+    OMNI_KEYS: createInMemoryKV(),
+    ADMIN_PASSWORD: 'admin', // Variável de ambiente resetada para default
+    OMNIROUTE_MODEL: 'gemini-2.5-flash', // Resetada
+    PUBLIC_APP_TITLE: 'GitVisão • Catálogo Pega a Visão' // Resetada
+  };
+
+  const resolved = await getRuntimeSettings(envAfterReset.DB, envAfterReset);
+  assert.equal(
+    resolved.adminPassword,
+    'kv-super-secret-pass',
+    'KV deve ter precedência máxima sobre o env resetado'
+  );
+  assert.equal(
+    resolved.omnirouteModel,
+    'gemini-2.5-pro',
+    'Modelo no KV deve ter precedência sobre o env resetado'
+  );
+  assert.equal(
+    resolved.publicAppTitle,
+    'GitVisão Persistido no KV',
+    'Título no KV deve ter precedência sobre o env resetado'
+  );
+  assert.equal(resolved.usingDefaultPassword, false);
+
+  // Também verifica via chamada HTTP no Worker com as variáveis resetadas
+  const healthRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/health'),
+    envAfterReset
+  );
+  assert.equal(healthRes.status, 200);
+  const healthData = (await healthRes.json()) as {
+    usingDefaultPassword: boolean;
+    omnirouteModel: string;
+  };
+  assert.equal(healthData.usingDefaultPassword, false);
+  assert.equal(healthData.omnirouteModel, 'gemini-2.5-pro');
+
+  // B. Restauração de backup do KV para o D1 quando o D1 inicia vazio
+  const backupKv = createInMemoryKV();
+  const backedUpRepo: SerializedRepo = {
+    id: 101,
+    repo_key: 'acme/quantum-agent',
+    full_name: 'acme/quantum-agent',
+    owner: 'acme',
+    name: 'quantum-agent',
+    repo_url: 'https://github.com/acme/quantum-agent',
+    description: 'Agente quântico recuperado do backup Cloudflare KV',
+    stars: 8700,
+    forks: 450,
+    language: 'TypeScript',
+    topics: ['quantum', 'agents', 'ai'],
+    last_commit_at: '2026-10-24T18:00:00Z',
+    category: 'Agentes & Automação IA',
+    template_type: 'ai-agent-automation',
+    hook_title: 'Como automatizar decisões quânticas na borda',
+    intro_text: 'Framework de agentes quânticos integrado a MCP e Cloudflare',
+    warning_note: 'Necessita Node 20+',
+    features: ['Execução ultra-rápida', 'Failover distribuído', 'MCP nativo'],
+    scenario_title: 'Automação Quântica em Produção',
+    scenario_intro: 'Configure em menos de 2 minutos',
+    scenario_prompt: 'Explique a arquitetura',
+    scenario_steps: ['npm install quantum-agent', 'Configure as chaves', 'Execute o worker'],
+    scenario_outro: 'Pronto para uso.',
+    killer_title: 'O Diferencial Matador',
+    killer_text: 'Zero latência e total soberania dos dados locais',
+    summary_text: 'Resumo completo restaurado do Cloudflare KV.',
+    punchline: 'Decisões quânticas em milissegundos.',
+    whatsapp_text: 'WhatsApp post formatado restaurado do KV',
+    created_at: '2026-10-24T10:00:00Z',
+    updated_at: '2026-10-24T18:00:00Z'
+  };
+
+  // Simula repositório previamente salvo e espelhado no KV
+  await backupKv.put('repo:acme/quantum-agent', JSON.stringify(backedUpRepo));
+  await backupKv.put('repos:keys', JSON.stringify(['acme/quantum-agent']));
+
+  // Cria um banco D1 novo e 100% vazio (sem nenhuma tabela ou linha)
+  const freshEmptyD1 = createInMemoryD1();
+  const freshEnv: Env = {
+    DB: freshEmptyD1,
+    GITVISAO_KV: backupKv,
+    OMNI_KEYS: createInMemoryKV()
+  };
+
+  // ensureDatabaseInitialized detecta total === 0 e restaura do KV automaticamente
+  await ensureDatabaseInitialized(freshEnv.DB, freshEnv);
+
+  // Verifica que o repositório do KV foi restaurado no banco D1 com todos os dados íntegros
+  const restoredRepo = await findRepoByKey(freshEmptyD1, 'acme/quantum-agent');
+  assert.ok(restoredRepo, 'Repositório deve ter sido restaurado com sucesso do KV para o D1');
+  assert.equal(restoredRepo.full_name, 'acme/quantum-agent');
+  assert.equal(restoredRepo.stars, 8700);
+  assert.equal(restoredRepo.category, 'Agentes & Automação IA');
+  assert.equal(restoredRepo.template_type, 'ai-agent-automation');
+  assert.equal(restoredRepo.summary_text, 'Resumo completo restaurado do Cloudflare KV.');
+  assert.deepEqual(restoredRepo.topics, ['quantum', 'agents', 'ai']);
+  assert.deepEqual(restoredRepo.features, ['Execução ultra-rápida', 'Failover distribuído', 'MCP nativo']);
+
+  // Verifica listagem via API do Worker no D1 restaurado
+  const apiListRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/repos'),
+    freshEnv
+  );
+  assert.equal(apiListRes.status, 200);
+  const apiListData = (await apiListRes.json()) as {
+    ok: boolean;
+    total: number;
+    items: Array<{ repo_key: string }>;
+  };
+  assert.equal(apiListData.ok, true);
+  assert.ok(
+    apiListData.items.some((item) => item.repo_key === 'acme/quantum-agent'),
+    'Item restaurado do KV deve aparecer na listagem da API'
+  );
 });
 
