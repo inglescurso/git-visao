@@ -1,13 +1,24 @@
 name = "git-visao"
 main = "src/index.ts"
-compatibility_date = "2025-02-01"
+compatibility_date = "2025-02-24"
+compatibility_flags = ["nodejs_compat"]
+
+# keep_vars evita que deploys do GitHub (Sync fork) removam variáveis e segredos
+# configurados no Cloudflare Dashboard.
+keep_vars = true
+
+[observability]
+enabled = true
 
 [vars]
+ADMIN_PASSWORD = "admin"
+OMNIROUTE_BASE_URL = ""
+OMNIROUTE_API_KEY = ""
 OMNIROUTE_MODEL = "gemini-2.5-flash"
-PUBLIC_APP_TITLE = "GitVisão • Catálogo de Repositórios"
+GITHUB_TOKEN = ""
+PUBLIC_APP_TITLE = "GitVisão • Catálogo Pega a Visão"
 
+# Banco D1 provisionado automaticamente pela Cloudflare no primeiro deploy via GitHub.
 [[d1_databases]]
 binding = "DB"
-database_name = "git-visao-db"
-database_id = "00000000-0000-0000-0000-000000000000"
-migrations_dir = "migrations"
+database_name = "git_visao_db"

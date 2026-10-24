@@ -112,7 +112,7 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">${appTitle}</h1>
+            <h1 id="app-title-heading" class="text-base sm:text-lg font-bold tracking-tight text-white">${appTitle}</h1>
             <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-mono font-medium bg-sky-500/10 text-sky-400 border border-sky-500/25">
               5 Templates IA
             </span>
@@ -123,9 +123,9 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
         </div>
       </div>
 
-      <div class="flex items-center gap-2.5 sm:gap-3">
+      <div class="flex items-center gap-2 sm:gap-3">
         <!-- Status OmniRoute + D1 -->
-        <div id="health-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-900/90 border border-white/10 text-slate-300">
+        <div id="health-badge" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-900/90 border border-white/10 text-slate-300">
           <span id="health-dot" class="w-2 h-2 rounded-full ${omnirouteActive ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}"></span>
           <span id="health-text" class="font-mono text-[11px]">
             ${omnirouteActive ? `OmniRoute (${modelName}) + D1` : `Modo Smart (${modelName}) + D1`}
@@ -138,11 +138,34 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
           <span id="total-repos-count">0</span>
           <span class="hidden md:inline">repositórios</span>
         </div>
+
+        <!-- Botão Painel de Configuração no Próprio App (Zero CLI) -->
+        <button
+          id="open-settings-btn"
+          type="button"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-white/15 text-white transition cursor-pointer shadow-sm"
+        >
+          <span>⚙️ Configurar IA &amp; Senha</span>
+        </button>
       </div>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- Banner de Primeiro Acesso / Configuração Zero CLI -->
+    <div id="first-access-banner" class="hidden rounded-2xl border border-amber-500/35 bg-amber-950/25 px-4 py-3.5 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <p class="text-xs sm:text-sm text-amber-200/95 leading-relaxed">
+        💡 Primeiro acesso: a senha inicial de admin é <code class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200 font-mono font-bold">admin</code>. Clique em <button id="banner-open-settings-btn" type="button" class="font-bold text-amber-300 underline hover:text-white cursor-pointer">⚙️ Configurar IA &amp; Senha</button> para conectar seu OmniRoute e definir sua senha definitiva (salva no banco D1, à prova de atualizações do GitHub).
+      </p>
+      <button
+        id="banner-settings-cta-btn"
+        type="button"
+        class="shrink-0 px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 font-bold text-xs transition cursor-pointer"
+      >
+        ⚙️ Configurar IA &amp; Senha
+      </button>
+    </div>
 
     <!-- Painel Principal: Checar ou Cadastrar Repositório -->
     <section class="glass-panel rounded-2xl p-5 sm:p-7 shadow-2xl relative overflow-hidden">
@@ -454,6 +477,139 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
     </div>
   </div>
 
+  <!-- Modal Administrativo: Configurar IA & Senha no Banco D1 (Zero CLI) -->
+  <div id="settings-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm">
+    <div class="glass-panel w-full max-w-2xl max-h-[92vh] rounded-2xl border border-white/15 shadow-2xl flex flex-col overflow-hidden">
+      <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between gap-4 bg-slate-950/60">
+        <div>
+          <span class="text-[11px] font-mono uppercase tracking-wider text-sky-400">Persistência Direta no Cloudflare D1 • Zero CLI</span>
+          <h3 class="text-base sm:text-lg font-bold text-white">⚙️ Configurar IA &amp; Senha</h3>
+        </div>
+        <button id="settings-close-btn" type="button" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 flex items-center justify-center cursor-pointer">
+          ✕
+        </button>
+      </div>
+
+      <form id="settings-form" class="p-5 sm:p-6 overflow-y-auto space-y-4">
+        <div class="p-3.5 rounded-xl bg-sky-500/10 border border-sky-500/25 text-xs text-sky-200 leading-relaxed">
+          🔒 Todas as configurações abaixo são salvas na tabela <code class="font-mono font-bold text-white">app_settings</code> do seu banco D1. Elas nunca são perdidas quando você faz <code class="font-mono">git push</code> ou atualiza o código pelo GitHub.
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="settings-current-password" class="block text-xs font-semibold text-slate-200 mb-1">
+              🔑 Senha Atual de Admin <span class="text-amber-300 font-mono font-normal">(Padrão inicial: admin)</span>
+            </label>
+            <input
+              id="settings-current-password"
+              type="password"
+              required
+              placeholder="Padrão inicial: admin"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 font-mono"
+            />
+          </div>
+
+          <div>
+            <label for="settings-new-password" class="block text-xs font-semibold text-slate-200 mb-1">
+              🛡️ Nova Senha de Admin <span class="text-slate-400 font-normal">(opcional)</span>
+            </label>
+            <input
+              id="settings-new-password"
+              type="password"
+              placeholder="Em branco mantém a senha atual"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 font-mono"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 border-t border-white/10">
+          <div class="sm:col-span-2">
+            <label for="settings-omniroute-url" class="block text-xs font-semibold text-slate-200 mb-1">
+              🌐 URL do OmniRoute <span class="text-slate-400 font-normal">(endpoint compatível com OpenAI /v1)</span>
+            </label>
+            <input
+              id="settings-omniroute-url"
+              type="text"
+              placeholder="https://seu-omniroute.seudominio.com/v1"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 font-mono"
+            />
+          </div>
+
+          <div>
+            <label for="settings-omniroute-key" class="block text-xs font-semibold text-slate-200 mb-1">
+              🔐 API Key do OmniRoute
+            </label>
+            <input
+              id="settings-omniroute-key"
+              type="password"
+              placeholder="Deixe em branco para manter a chave já salva"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 font-mono"
+            />
+          </div>
+
+          <div>
+            <label for="settings-omniroute-model" class="block text-xs font-semibold text-slate-200 mb-1">
+              🤖 Modelo de IA <span class="text-slate-400 font-normal">(padrão: gemini-2.5-flash)</span>
+            </label>
+            <input
+              id="settings-omniroute-model"
+              type="text"
+              value="${modelName}"
+              placeholder="gemini-2.5-flash"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 font-mono"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 border-t border-white/10">
+          <div>
+            <label for="settings-github-token" class="block text-xs font-semibold text-slate-200 mb-1">
+              🐙 GitHub Token (Opcional) <span class="text-slate-400 font-normal">(5.000 req/h)</span>
+            </label>
+            <input
+              id="settings-github-token"
+              type="password"
+              placeholder="ghp_... (em branco mantém o atual)"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 font-mono"
+            />
+          </div>
+
+          <div>
+            <label for="settings-app-title" class="block text-xs font-semibold text-slate-200 mb-1">
+              🏷️ Título do Catálogo
+            </label>
+            <input
+              id="settings-app-title"
+              type="text"
+              value="${appTitle}"
+              placeholder="GitVisão • Pega a Visão"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-400"
+            />
+          </div>
+        </div>
+
+        <p id="settings-error-msg" class="hidden text-xs text-rose-400 font-semibold"></p>
+
+        <div class="pt-3 border-t border-white/10 flex items-center justify-end gap-3">
+          <button
+            id="settings-cancel-btn"
+            type="button"
+            class="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs sm:text-sm font-semibold text-slate-300 transition cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            id="settings-submit-btn"
+            type="submit"
+            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-sky-500/20 transition cursor-pointer"
+          >
+            💾 Salvar no Banco D1
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     const ALL_CATEGORIES = [
       'Agentes & Automação IA',
@@ -594,10 +750,47 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
         const data = await res.json();
         const dot = document.getElementById('health-dot');
         const text = document.getElementById('health-text');
+        const banner = document.getElementById('first-access-banner');
         const model = data.model || data.omnirouteModel || 'gemini-2.5-flash';
         const omni = Boolean(data.omnirouteConfigured ?? data.omniroute);
+        const usingDefaultPassword = Boolean(data.usingDefaultPassword);
+
         dot.className = 'w-2 h-2 rounded-full ' + (omni ? 'bg-emerald-400 animate-pulse' : 'bg-sky-400');
         text.textContent = (omni ? 'OmniRoute (' + model + ') + D1' : 'Smart Fallback (' + model + ') + D1');
+
+        if (usingDefaultPassword || !omni) {
+          banner.classList.remove('hidden');
+        } else {
+          banner.classList.add('hidden');
+        }
+
+        const titleFromApi = data.publicAppTitle || data.appTitle;
+        if (titleFromApi) {
+          document.title = titleFromApi;
+          const headingEl = document.getElementById('app-title-heading');
+          if (headingEl) headingEl.textContent = titleFromApi;
+          const titleInput = document.getElementById('settings-app-title');
+          if (titleInput && !titleInput.dataset.touched) titleInput.value = titleFromApi;
+        }
+
+        if (data.omnirouteBaseUrl && data.omnirouteBaseUrl !== '(configurado)') {
+          const urlInput = document.getElementById('settings-omniroute-url');
+          if (urlInput && !urlInput.dataset.touched) urlInput.value = data.omnirouteBaseUrl;
+        }
+        if (usingDefaultPassword) {
+          const currentPassInput = document.getElementById('settings-current-password');
+          if (currentPassInput && !currentPassInput.value) {
+            currentPassInput.value = 'admin';
+          }
+          const genPassInput = document.getElementById('admin-password-input');
+          if (genPassInput && !genPassInput.value) {
+            genPassInput.value = 'admin';
+          }
+        }
+        if (model) {
+          const modelInput = document.getElementById('settings-omniroute-model');
+          if (modelInput && !modelInput.dataset.touched) modelInput.value = model;
+        }
       } catch {
         // Ignora silenciosamente
       }
@@ -1003,6 +1196,121 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
       document.getElementById('generate-repo-label').textContent = currentCheckedRepo.fullName;
       document.getElementById('check-generate-panel').classList.remove('hidden');
       document.getElementById('admin-password-input').focus();
+    });
+
+    // Modal de Configurações (Zero CLI / Persistência D1)
+    async function openSettingsModal() {
+      const errEl = document.getElementById('settings-error-msg');
+      errEl.classList.add('hidden');
+
+      try {
+        const candidatePass = document.getElementById('settings-current-password').value.trim() || 'admin';
+        const res = await fetch('/api/settings', {
+          headers: {
+            'X-Admin-Password': candidatePass
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const cfg = data.settings || data;
+          if (cfg.omnirouteBaseUrl !== undefined) {
+            document.getElementById('settings-omniroute-url').value = cfg.omnirouteBaseUrl || '';
+          }
+          if (cfg.omnirouteModel) {
+            document.getElementById('settings-omniroute-model').value = cfg.omnirouteModel;
+          }
+          if (cfg.publicAppTitle || cfg.appTitle) {
+            document.getElementById('settings-app-title').value = cfg.publicAppTitle || cfg.appTitle;
+          }
+        }
+      } catch {
+        // Usa valores já carregados via /api/health
+      }
+
+      const modal = document.getElementById('settings-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.getElementById('settings-current-password').focus();
+    }
+
+    function closeSettingsModal() {
+      const modal = document.getElementById('settings-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    document.getElementById('open-settings-btn').addEventListener('click', openSettingsModal);
+    document.getElementById('banner-open-settings-btn').addEventListener('click', openSettingsModal);
+    document.getElementById('banner-settings-cta-btn').addEventListener('click', openSettingsModal);
+    document.getElementById('settings-close-btn').addEventListener('click', closeSettingsModal);
+    document.getElementById('settings-cancel-btn').addEventListener('click', closeSettingsModal);
+    document.getElementById('settings-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'settings-modal') closeSettingsModal();
+    });
+
+    document.getElementById('settings-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const currentPassword = document.getElementById('settings-current-password').value.trim();
+      const newPassword = document.getElementById('settings-new-password').value.trim();
+      const omnirouteBaseUrl = document.getElementById('settings-omniroute-url').value.trim();
+      const omnirouteApiKey = document.getElementById('settings-omniroute-key').value.trim();
+      const omnirouteModel = document.getElementById('settings-omniroute-model').value.trim() || 'gemini-2.5-flash';
+      const githubToken = document.getElementById('settings-github-token').value.trim();
+      const publicAppTitle = document.getElementById('settings-app-title').value.trim();
+
+      const errEl = document.getElementById('settings-error-msg');
+      const submitBtn = document.getElementById('settings-submit-btn');
+      errEl.classList.add('hidden');
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '⏳ Salvando no Banco D1...';
+
+      try {
+        const payload = {
+          password: currentPassword,
+          currentPassword,
+          newPassword: newPassword || undefined,
+          omnirouteBaseUrl,
+          omnirouteApiKey: omnirouteApiKey || undefined,
+          omnirouteModel,
+          githubToken: githubToken || undefined,
+          publicAppTitle: publicAppTitle || undefined
+        };
+
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Password': currentPassword,
+            'Authorization': currentPassword ? ('Bearer ' + currentPassword) : ''
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          errEl.textContent = data.error || 'Erro ao salvar configurações (verifique a Senha Atual de Admin).';
+          errEl.classList.remove('hidden');
+          showToast(errEl.textContent, 'error');
+          return;
+        }
+
+        document.getElementById('settings-current-password').value = newPassword || currentPassword;
+        document.getElementById('settings-new-password').value = '';
+        document.getElementById('settings-omniroute-key').value = '';
+        document.getElementById('settings-github-token').value = '';
+        document.getElementById('admin-password-input').value = newPassword || currentPassword;
+
+        await loadHealth();
+        closeSettingsModal();
+        showToast('💾 Configurações salvas no Banco D1 com sucesso!');
+      } catch {
+        errEl.textContent = 'Falha de comunicação ao salvar configurações no Worker.';
+        errEl.classList.remove('hidden');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '💾 Salvar no Banco D1';
+      }
     });
 
     // Inicialização

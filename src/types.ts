@@ -23,6 +23,16 @@ export interface Env {
   PUBLIC_APP_TITLE?: string;
 }
 
+export interface RuntimeSettings {
+  adminPassword: string;
+  usingDefaultPassword: boolean;
+  omnirouteBaseUrl: string;
+  omnirouteApiKey: string;
+  omnirouteModel: string;
+  githubToken: string;
+  publicAppTitle: string;
+}
+
 export interface GitHubRepoMetadata {
   repoKey: string;
   fullName: string;

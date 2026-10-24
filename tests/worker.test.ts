@@ -16,6 +16,7 @@ import type { Env, GitHubRepoMetadata, RepoRecord } from '../src/types.ts';
 
 function createInMemoryD1(): D1Database {
   const rows = new Map<string, RepoRecord>();
+  const settings = new Map<string, string>();
   let autoId = 1;
 
   function buildPreparedStatement(sql: string, boundArgs: unknown[] = []) {
@@ -32,6 +33,19 @@ function createInMemoryD1(): D1Database {
           normalizedSql.startsWith('CREATE INDEX')
         ) {
           return { success: true, meta: {} };
+        }
+
+        if (normalizedSql.includes('INTO app_settings')) {
+          const isIgnore = normalizedSql.startsWith('INSERT OR IGNORE');
+          const key = String(boundArgs[0] ?? '');
+          const value = String(boundArgs[1] ?? '');
+          if (isIgnore && settings.has(key)) {
+            return { success: true, meta: { changes: 0 } };
+          }
+          if (key) {
+            settings.set(key, value);
+          }
+          return { success: true, meta: { changes: 1 } };
         }
 
         if (
@@ -97,6 +111,12 @@ function createInMemoryD1(): D1Database {
           return { total: rows.size } as unknown as T;
         }
 
+        if (normalizedSql.includes('FROM app_settings') && normalizedSql.includes('WHERE key = ?')) {
+          const key = String(boundArgs[0] ?? '');
+          if (!settings.has(key)) return null;
+          return { key, value: settings.get(key)! } as unknown as T;
+        }
+
         if (normalizedSql.startsWith('SELECT * FROM repositories WHERE repo_key = ?')) {
           const key = String(boundArgs[0] || '').toLowerCase();
           return (rows.get(key) ?? null) as unknown as T | null;
@@ -106,6 +126,14 @@ function createInMemoryD1(): D1Database {
       },
 
       async all<T = unknown>(): Promise<{ results: T[]; success: boolean; meta: Record<string, unknown> }> {
+        if (normalizedSql.includes('FROM app_settings')) {
+          const results = Array.from(settings.entries()).map(([key, value]) => ({
+            key,
+            value
+          })) as unknown as T[];
+          return { results, success: true, meta: {} };
+        }
+
         if (normalizedSql === 'SELECT category, template_type FROM repositories') {
           const results = Array.from(rows.values()).map((r) => ({
             category: r.category,
@@ -434,3 +462,113 @@ test('4. Rotas da API do Worker (/api/health, /api/repos, /api/check e POST /api
     globalThis.fetch = originalFetch;
   }
 });
+
+test('5. Painel Zero-CLI (/api/settings): senha padrão "admin" inicial e persistência de senha + OmniRoute no D1', async () => {
+  // Instalação limpa sem variáveis de ambiente (apenas banco D1)
+  const cleanEnv: Env = {
+    DB: createInMemoryD1()
+  };
+
+  // 1. Verifica que instalação limpa usa a senha padrão "admin" e omnirouteConfigured = false
+  const initialHealthRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/health'),
+    cleanEnv
+  );
+  assert.equal(initialHealthRes.status, 200);
+  const initialHealth = (await initialHealthRes.json()) as {
+    ok: boolean;
+    usingDefaultPassword: boolean;
+    omnirouteConfigured: boolean;
+  };
+  assert.equal(initialHealth.ok, true);
+  assert.equal(initialHealth.usingDefaultPassword, true);
+  assert.equal(initialHealth.omnirouteConfigured, false);
+
+  // 2. Verifica que GET /api/settings aceita a senha padrão "admin"
+  const getSettingsInitialRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/settings', {
+      headers: { 'X-Admin-Password': 'admin' }
+    }),
+    cleanEnv
+  );
+  assert.equal(getSettingsInitialRes.status, 200);
+
+  // 3. POST /api/settings autenticado com "admin" altera a senha para "minha-nova-senha" e configura OmniRoute no D1
+  const updateSettingsRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        currentPassword: 'admin',
+        newPassword: 'minha-nova-senha',
+        omnirouteBaseUrl: 'https://omniroute.seudominio.com/v1',
+        omnirouteApiKey: 'sk-omniroute-secret-9999',
+        omnirouteModel: 'gemini-2.5-flash',
+        publicAppTitle: 'GitVisão Custom D1'
+      })
+    }),
+    cleanEnv
+  );
+  assert.equal(updateSettingsRes.status, 200);
+  const updateSettingsData = (await updateSettingsRes.json()) as {
+    ok: boolean;
+    usingDefaultPassword: boolean;
+    hasOmnirouteApiKey: boolean;
+    omnirouteBaseUrl: string;
+    publicAppTitle: string;
+  };
+  assert.equal(updateSettingsData.ok, true);
+  assert.equal(updateSettingsData.usingDefaultPassword, false);
+  assert.equal(updateSettingsData.hasOmnirouteApiKey, true);
+  assert.equal(updateSettingsData.omnirouteBaseUrl, 'https://omniroute.seudominio.com/v1');
+  assert.equal(updateSettingsData.publicAppTitle, 'GitVisão Custom D1');
+
+  // 4. Verifica que a senha antiga "admin" passa a ser recusada (401)
+  const oldPasswordRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        currentPassword: 'admin',
+        publicAppTitle: 'Tentativa Inválida'
+      })
+    }),
+    cleanEnv
+  );
+  assert.equal(oldPasswordRes.status, 401);
+
+  // 5. Verifica que a nova senha "minha-nova-senha" passa a ser aceita (200)
+  const newPasswordRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        currentPassword: 'minha-nova-senha',
+        omnirouteModel: 'gemini-2.5-pro'
+      })
+    }),
+    cleanEnv
+  );
+  assert.equal(newPasswordRes.status, 200);
+  const newPasswordData = (await newPasswordRes.json()) as {
+    ok: boolean;
+    omnirouteModel: string;
+  };
+  assert.equal(newPasswordData.ok, true);
+  assert.equal(newPasswordData.omnirouteModel, 'gemini-2.5-pro');
+
+  // 6. Healthcheck reflete OmniRoute configurado e senha definitiva ativa
+  const finalHealthRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/health'),
+    cleanEnv
+  );
+  const finalHealth = (await finalHealthRes.json()) as {
+    usingDefaultPassword: boolean;
+    omnirouteConfigured: boolean;
+    omnirouteModel: string;
+  };
+  assert.equal(finalHealth.usingDefaultPassword, false);
+  assert.equal(finalHealth.omnirouteConfigured, true);
+  assert.equal(finalHealth.omnirouteModel, 'gemini-2.5-pro');
+});
+

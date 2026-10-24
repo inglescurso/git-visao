@@ -16,6 +16,16 @@ export function extractAdminPassword(request: Request, bodyPassword?: string): s
     return bodyPassword.trim();
   }
 
+  try {
+    const url = new URL(request.url);
+    const queryPassword = url.searchParams.get('password');
+    if (queryPassword && queryPassword.trim()) {
+      return queryPassword.trim();
+    }
+  } catch {
+    // ignore invalid URL
+  }
+
   return '';
 }
 

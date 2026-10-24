@@ -1,5 +1,11 @@
 import { SEED_REPOSITORIES } from './seed.ts';
-import type { GeneratedVisaoSummary, GitHubRepoMetadata, RepoRecord } from './types.ts';
+import type {
+  Env,
+  GeneratedVisaoSummary,
+  GitHubRepoMetadata,
+  RepoRecord,
+  RuntimeSettings
+} from './types.ts';
 
 export interface RepoSearchFilters {
   q?: string;
@@ -75,6 +81,13 @@ CREATE TABLE IF NOT EXISTS repositories (
     updated_at TEXT DEFAULT (datetime('now'))
 )`;
 
+const CREATE_SETTINGS_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT DEFAULT (datetime('now'))
+)`;
+
 const CREATE_INDEXES_SQL = [
   'CREATE INDEX IF NOT EXISTS idx_repositories_repo_key ON repositories(repo_key)',
   'CREATE INDEX IF NOT EXISTS idx_repositories_category ON repositories(category)',
@@ -85,6 +98,7 @@ const CREATE_INDEXES_SQL = [
 
 export async function ensureDatabaseInitialized(db: D1Database): Promise<void> {
   await db.prepare(CREATE_TABLE_SQL).run();
+  await db.prepare(CREATE_SETTINGS_TABLE_SQL).run();
   for (const indexSql of CREATE_INDEXES_SQL) {
     await db.prepare(indexSql).run();
   }
@@ -352,3 +366,167 @@ export async function deleteRepository(db: D1Database, repoKey: string): Promise
   await db.prepare('DELETE FROM repositories WHERE repo_key = ?').bind(normalizedKey).run();
   return true;
 }
+
+export interface RuntimeSettingsUpdates {
+  adminPassword?: string;
+  omnirouteBaseUrl?: string;
+  omnirouteApiKey?: string;
+  omnirouteModel?: string;
+  githubToken?: string;
+  publicAppTitle?: string;
+}
+
+const SETTING_KEY_MAP: Record<keyof RuntimeSettingsUpdates, string> = {
+  adminPassword: 'admin_password',
+  omnirouteBaseUrl: 'omniroute_base_url',
+  omnirouteApiKey: 'omniroute_api_key',
+  omnirouteModel: 'omniroute_model',
+  githubToken: 'github_token',
+  publicAppTitle: 'public_app_title'
+};
+
+export async function saveRuntimeSettings(
+  db: D1Database,
+  updates: Partial<RuntimeSettingsUpdates>
+): Promise<void> {
+  await db.prepare(CREATE_SETTINGS_TABLE_SQL).run();
+
+  const upsertSql = `
+    INSERT INTO app_settings (key, value, updated_at)
+    VALUES (?, ?, datetime('now'))
+    ON CONFLICT(key) DO UPDATE SET
+      value = excluded.value,
+      updated_at = datetime('now')
+  `;
+
+  for (const [propKey, dbKey] of Object.entries(SETTING_KEY_MAP) as Array<
+    [keyof RuntimeSettingsUpdates, string]
+  >) {
+    const val = updates[propKey];
+    if (val !== undefined) {
+      await db.prepare(upsertSql).bind(dbKey, String(val)).run();
+    }
+  }
+}
+
+export async function getRuntimeSettings(
+  db: D1Database,
+  env: Env
+): Promise<RuntimeSettings> {
+  await db.prepare(CREATE_SETTINGS_TABLE_SQL).run();
+
+  const rowsResult = await db
+    .prepare('SELECT key, value FROM app_settings')
+    .all<{ key: string; value: string }>();
+
+  const settingsMap = new Map<string, string>();
+  for (const row of rowsResult?.results ?? []) {
+    if (row && typeof row.key === 'string') {
+      settingsMap.set(row.key, String(row.value ?? ''));
+    }
+  }
+
+  const readKey = (...candidates: string[]): string | undefined => {
+    for (const k of candidates) {
+      if (settingsMap.has(k)) {
+        return settingsMap.get(k);
+      }
+    }
+    return undefined;
+  };
+
+  let dbAdminPassword = readKey('admin_password', 'adminPassword', 'ADMIN_PASSWORD');
+  let dbOmnirouteBaseUrl = readKey(
+    'omniroute_base_url',
+    'omnirouteBaseUrl',
+    'OMNIROUTE_BASE_URL'
+  );
+  let dbOmnirouteApiKey = readKey(
+    'omniroute_api_key',
+    'omnirouteApiKey',
+    'OMNIROUTE_API_KEY'
+  );
+  let dbOmnirouteModel = readKey('omniroute_model', 'omnirouteModel', 'OMNIROUTE_MODEL');
+  let dbGithubToken = readKey('github_token', 'githubToken', 'GITHUB_TOKEN');
+  let dbPublicAppTitle = readKey(
+    'public_app_title',
+    'publicAppTitle',
+    'PUBLIC_APP_TITLE'
+  );
+
+  // Auto-persist non-default env vars to D1 app_settings so Sync Fork on GitHub never wipes secrets
+  const autoPersistUpdates: Partial<RuntimeSettingsUpdates> = {};
+
+  const envAdminPassword = (env.ADMIN_PASSWORD || '').trim();
+  if (
+    dbAdminPassword === undefined &&
+    envAdminPassword &&
+    envAdminPassword !== 'admin'
+  ) {
+    autoPersistUpdates.adminPassword = envAdminPassword;
+    dbAdminPassword = envAdminPassword;
+  }
+
+  const envOmnirouteBaseUrl = (env.OMNIROUTE_BASE_URL || '').trim();
+  if (dbOmnirouteBaseUrl === undefined && envOmnirouteBaseUrl) {
+    autoPersistUpdates.omnirouteBaseUrl = envOmnirouteBaseUrl;
+    dbOmnirouteBaseUrl = envOmnirouteBaseUrl;
+  }
+
+  const envOmnirouteApiKey = (env.OMNIROUTE_API_KEY || '').trim();
+  if (dbOmnirouteApiKey === undefined && envOmnirouteApiKey) {
+    autoPersistUpdates.omnirouteApiKey = envOmnirouteApiKey;
+    dbOmnirouteApiKey = envOmnirouteApiKey;
+  }
+
+  const envGithubToken = (env.GITHUB_TOKEN || '').trim();
+  if (dbGithubToken === undefined && envGithubToken) {
+    autoPersistUpdates.githubToken = envGithubToken;
+    dbGithubToken = envGithubToken;
+  }
+
+  if (Object.keys(autoPersistUpdates).length > 0) {
+    await saveRuntimeSettings(db, autoPersistUpdates);
+  }
+
+  const adminPassword =
+    (dbAdminPassword && dbAdminPassword.trim()) ||
+    envAdminPassword ||
+    'admin';
+
+  const omnirouteBaseUrl =
+    dbOmnirouteBaseUrl !== undefined
+      ? dbOmnirouteBaseUrl.trim()
+      : envOmnirouteBaseUrl;
+
+  const omnirouteApiKey =
+    dbOmnirouteApiKey !== undefined
+      ? dbOmnirouteApiKey.trim()
+      : envOmnirouteApiKey;
+
+  const omnirouteModel =
+    (dbOmnirouteModel && dbOmnirouteModel.trim()) ||
+    (env.OMNIROUTE_MODEL && env.OMNIROUTE_MODEL.trim()) ||
+    'gemini-2.5-flash';
+
+  const githubToken =
+    dbGithubToken !== undefined
+      ? dbGithubToken.trim()
+      : envGithubToken;
+
+  const publicAppTitle =
+    (dbPublicAppTitle && dbPublicAppTitle.trim()) ||
+    (env.PUBLIC_APP_TITLE && env.PUBLIC_APP_TITLE.trim()) ||
+    'GitVisão • Catálogo Pega a Visão';
+
+  return {
+    adminPassword,
+    usingDefaultPassword: adminPassword === 'admin',
+    omnirouteBaseUrl,
+    omnirouteApiKey,
+    omnirouteModel,
+    githubToken,
+    publicAppTitle
+  };
+}
+

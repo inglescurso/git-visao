@@ -36,3 +36,10 @@ CREATE INDEX IF NOT EXISTS idx_repositories_category ON repositories(category);
 CREATE INDEX IF NOT EXISTS idx_repositories_template_type ON repositories(template_type);
 CREATE INDEX IF NOT EXISTS idx_repositories_stars ON repositories(stars DESC);
 CREATE INDEX IF NOT EXISTS idx_repositories_created_at ON repositories(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+

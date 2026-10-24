@@ -1,16 +1,65 @@
-# 👁️ GitVisão • Catálogo Inteligente "Pega a Visão" para Repositórios GitHub
+# 👁️ GitVisão • Catálogo Inteligente "Pega a Visão" na Borda da Cloudflare
 
-O **GitVisão** é uma aplicação completa rodando 100% na borda da **Cloudflare (Workers + D1 SQLite)** integrada ao **OmniRoute (com modelos Gemini)** para catalogar, categorizar, buscar e gerar resumos virais no estilo **"Pega a Visão"** para grupos de WhatsApp e comunidades de tecnologia.
+O **GitVisão** é uma aplicação completa **100% Serverless na Borda da Cloudflare (Workers + D1 SQLite)** integrada ao **OmniRoute (com modelos Gemini)** para catalogar, categorizar, buscar e gerar resumos virais no formato **"Pega a Visão"** para grupos de WhatsApp e comunidades de tecnologia.
+
+Projetado com a mesma filosofia **Zero-Terminal / 1-Step Deploy** do [`DriveFlin`](https://github.com/samucamg/DriveFlin) e [`veroroute-edge`](https://github.com/samucamg/veroroute-edge): **você faz o deploy direto pelo painel web da Cloudflare sem instalar Node.js, sem rodar comandos no terminal e sem perder suas configurações ao atualizar o fork!**
 
 ---
 
-## 🏗️ Arquitetura do Sistema
+## ⚡ Deploy em 1 Único Passo pelo Painel da Cloudflare (Zero Terminal / Zero CLI)
+
+Esqueça `wrangler d1 create`, copiar `database_id` manualmente ou rodar migrações via CLI:
+
+1. **Auto-Provisioning do Banco D1 (`git_visao_db`)**: O arquivo [`wrangler.toml`](./wrangler.toml) utiliza o recurso oficial de **Auto-Provisioning do Wrangler v4**. No seu primeiro deploy conectado ao GitHub, a própria Cloudflare cria e vincula automaticamente o banco D1 `git_visao_db` na sua conta.
+2. **Auto-Seed e Auto-Migração (`ensureDatabaseInitialized`)**: No primeiro acesso à aplicação, o Worker cria automaticamente as tabelas (`repositories` e `app_settings`), índices de performance e popula os **5 exemplos iniciais** do formato *"Pega a Visão"*.
+3. **Configuração 100% via Interface Web (`⚙️ Configurar IA & Senha`)**: Todas as credenciais — **URL do OmniRoute**, **API Key**, **Modelo Gemini** (`gemini-2.5-flash`), **GitHub Token** e a **Senha de Admin** — são configuradas direto pelo modal **⚙️ Configurar IA & Senha** na interface web e salvas com segurança na tabela `app_settings` dentro do banco D1 (além de contar com `keep_vars = true` no `wrangler.toml`).
+4. **Atualizações Limpas (`Sync fork`)**: Quando sair uma nova versão do GitVisão, basta clicar em **Sync fork** no GitHub. A Cloudflare fará o rebuild automático **sem apagar seu banco D1 e sem perder nenhuma senha ou chave de API!**
+
+> [!WARNING]
+> **⚠️ IMPORTANTE: Não use botões de "Deploy to Cloudflare" de 1 clique!**
+>
+> Assim como no `veroroute-edge` e no `DriveFlin`, o botão "Deploy to Cloudflare" clona um repositório isolado na sua conta sem vínculo com o repositório original, dificultando atualizações futuras via `Sync fork`.
+>
+> **Siga sempre o fluxo oficial em 2 cliques abaixo:**
+> 1. **Faça um Fork** deste repositório para a sua conta do GitHub (ou use seu próprio repositório).
+> 2. No painel da Cloudflare, acesse **Compute (Workers & Pages)** → **Create** → aba **Workers** → **Import a repository**, selecione `git-visao` e clique em **Deploy**!
+
+---
+
+## 🚀 Passo a Passo do Deploy Oficial (Sem Terminal)
+
+1. Faça um **Fork** deste repositório no GitHub.
+2. Acesse o [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Compute (Workers & Pages)** → **Create**.
+3. Na aba **Workers**, clique em **Import a repository** e selecione o seu fork `git-visao`.
+4. Mantenha os comandos padrão (`Deploy command: npx wrangler deploy`) e clique em **Deploy**.
+   - *A Cloudflare criará automaticamente o Worker e provisionará o banco D1 `git_visao_db`.*
+
+---
+
+## ⏱️ Primeiro Acesso em 30 Segundos
+
+Assim que o deploy terminar na Cloudflare:
+
+1. Abra a URL gerada para o seu Worker (ex: `https://git-visao.<sua-conta>.workers.dev`).
+2. Clique no botão **⚙️ Configurar IA & Senha** no topo direito da página.
+3. No campo **Senha Atual de Admin**, digite a senha inicial padrão:
+   ```text
+   admin
+   ```
+4. Defina a sua **Nova Senha de Admin**, preencha a **URL Base do OmniRoute** (ex: `https://seu-omniroute.seudominio.com/v1`), sua **API Key do OmniRoute** e o **Modelo Rápido** (recomendado: `gemini-2.5-flash` para resposta instantânea).
+5. *(Opcional)* Informe um **GitHub Personal Access Token (`ghp_...`)** para aumentar o limite da API do GitHub de 60 para 5.000 requisições/hora.
+6. Clique em **Salvar no Banco D1**. Pronto! Seu catálogo inteligente já está 100% operacional.
+
+---
+
+## 🏗️ Arquitetura e Fluxo de Cache Inteligente
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                        Navegador / Interface Web                        │
-│   • Checagem instantânea de URLs do GitHub (sem senha se já existir)    │
+│   • Checagem instantânea de URLs do GitHub (aberta p/ todo o grupo)     │
 │   • Geração sob demanda com Senha de Admin + Escolha de Template        │
+│   • Painel Web de Configuração (⚙️ OmniRoute, Gemini, GitHub e Senha)   │
 │   • Busca Full-Text, Filtro por 6 Categorias, 5 Templates e Estrelas    │
 │   • Modal Lado a Lado + Botão 1-Clique "Copiar Resumo p/ WhatsApp"      │
 └───────────────────────────────────┬─────────────────────────────────────┘
@@ -20,31 +69,41 @@ O **GitVisão** é uma aplicação completa rodando 100% na borda da **Cloudflar
 │                    Cloudflare Worker (src/index.ts)                     │
 ├──────────────────────┬───────────────────────────┬──────────────────────┤
 │   Cloudflare D1 DB   │     GitHub REST API       │  OmniRoute AI (LLM)  │
-│  (SQLite Serverless) │  Metadados, Estrelas,     │  Endpoint OpenAI-    │
-│  Cache permanente de │  Último Commit, Tópicos   │  compatible usando   │
-│  repositórios        │  e README.md completo     │  gemini-2.5-flash    │
+│  (`git_visao_db`)    │  Metadados, Estrelas,     │  Endpoint OpenAI-    │
+│  Repositórios +      │  Último Commit, Tópicos   │  compatible usando   │
+│  `app_settings`      │  e README.md completo     │  gemini-2.5-flash    │
 └──────────────────────┴───────────────────────────┴──────────────────────┘
 ```
 
-### 🎨 As 5 Variações de Template "Pega a Visão"
+### 🛡️ Leitura Aberta para o Grupo vs. Geração Protegida por Senha
 
-Em vez de gerar textos engessados sempre com a mesma estrutura, o **GitVisão** analisa o repositório e seleciona automaticamente (ou permite escolher manualmente) uma das **5 variações**:
+O **GitVisão** foi desenhado para ser compartilhado livremente no grupo de WhatsApp sem risco de consumo indevido de tokens da sua IA:
+
+- **Consulta e Checagem 100% Abertas (Sem Senha)**: Qualquer membro do grupo pode pesquisar no catálogo, filtrar por categoria/template, colar uma URL do GitHub para checar se o repositório já foi analisado (`/api/check`) e copiar o resumo formatado para WhatsApp.
+- **Cache Inteligente no D1**: Se alguém colar um repositório que já está no banco D1, o sistema exibe o card imediatamente sem chamar a IA e sem pedir senha.
+- **Cadastro Novo e Regeração Protegidos**: Apenas quando o repositório **ainda não existe** no catálogo (ou quando você marca a opção de **Forçar regeração via IA**) o sistema solicita a **Senha de Admin** antes de consultar a API do GitHub e acionar o OmniRoute.
+
+---
+
+## 🎨 As 5 Variações Dinâmicas de Template "Pega a Visão"
+
+Em vez de gerar textos engessados sempre com a mesma estrutura, o **GitVisão** analisa a arquitetura e o propósito do repositório no GitHub e seleciona automaticamente (ou permite escolher manualmente) uma das **5 variações virais**:
 
 1. **`ai-agent-automation` (Agentes de IA & Automação — Estilo *BrowserOS*)**
-   - Gancho: `🌐 E SE SEU AGENTE DE IA GANHASSE...`
-   - Bloco mental: `🧠 PENSE ASSIM:` focado em delegar tarefas reais ao agente passo a passo.
+   - **Gancho**: `🌐 E SE SEU AGENTE DE IA GANHASSE...`
+   - **Bloco mental**: `🧠 PENSE ASSIM:` focado em delegar tarefas reais ao agente passo a passo.
 2. **`self-hosted-saas` (SaaS, CRM & Plataformas Self-Hosted — Estilo *wacrm*)**
-   - Gancho: `🏢 E SE VOCÊ TIVESSE SEU PRÓPRIO...`
-   - Bloco mental: `🧠 PENSE ASSIM:` focado em regras de negócio, soberania de dados e zero mensalidade de SaaS fechado.
+   - **Gancho**: `🏢 E SE VOCÊ TIVESSE SEU PRÓPRIO...`
+   - **Bloco mental**: `🧠 PENSE ASSIM:` focado em regras de negócio, soberania de dados e zero mensalidade de SaaS fechado.
 3. **`infra-gateway` (Infraestrutura, Gateways, Proxy & Edge — Estilo *VeroRoute Edge*)**
-   - Gancho: `🔀 E SE SEUS APPS NUNCA FICASSEM SEM...`
-   - Bloco mental: `🧠 PENSE ASSIM:` focado em alta disponibilidade, failover automático, cache na borda e resiliência.
+   - **Gancho**: `🔀 E SE SEUS APPS NUNCA FICASSEM SEM...`
+   - **Bloco mental**: `🧠 PENSE ASSIM:` focado em alta disponibilidade, failover automático, cache na borda e resiliência.
 4. **`app-tool` (Apps Desktop/Web & Produtividade)**
-   - Gancho: `⚡ JÁ PENSOU EM RESOLVER ... EM SEGUNDOS?`
-   - Bloco mental: `🎯 NA PRÁTICA, FUNCIONA ASSIM:` focado no fluxo de produtividade diário sem fricção.
+   - **Gancho**: `⚡ JÁ PENSOU EM RESOLVER ... EM SEGUNDOS?`
+   - **Bloco mental**: `🎯 NA PRÁTICA, FUNCIONA ASSIM:` focado no fluxo de produtividade diário sem fricção.
 5. **`dev-lib-cli` (Bibliotecas, SDKs, Frameworks & CLIs Dev)**
-   - Gancho: `🛠️ CANSADO DE ESCREVER BOILERPLATE PARA...?`
-   - Bloco mental: `💻 COMO FICA NO SEU FLUXO DEV:` focado em Developer Experience (DX), performance e integração rápida.
+   - **Gancho**: `🛠️ CANSADO DE ESCREVER BOILERPLATE PARA...?`
+   - **Bloco mental**: `💻 COMO FICA NO SEU FLUXO DEV:` focado em Developer Experience (DX), performance e integração rápida.
 
 ### 🗂️ As 6 Categorias Automáticas
 
@@ -57,152 +116,26 @@ Em vez de gerar textos engessados sempre com a mesma estrutura, o **GitVisão** 
 
 ---
 
-## 🛠️ Pré-requisitos e Configuração do Banco Cloudflare D1
+## 🔌 Rotas da API REST
 
-### 1. Instalar dependências locais
+| Método | Rota | Autenticação | Descrição |
+| :---: | :--- | :---: | :--- |
+| `GET` | `/api/health` | Pública | Status do banco D1, modelo OmniRoute ativo, categorias e templates disponíveis. |
+| `GET` | `/api/repos` | Pública | Lista e filtra repositórios (`?q=`, `?category=`, `?template=`, `?sort=recent\|stars\|name`). |
+| `GET` | `/api/check?repo=...` | Pública | Verifica instantaneamente se um repositório (`owner/repo` ou URL) já existe no catálogo D1. |
+| `POST` | `/api/repos` | Pública (se em cache) / **Senha Admin** (novo ou `force: true`) | Retorna do cache D1 se já existir, ou busca no GitHub + gera resumo via OmniRoute e salva no D1. |
+| `DELETE` | `/api/repos/:owner/:name` | **Senha Admin** | Remove um repositório do catálogo D1. |
+| `GET` | `/api/settings` | Pública (mascarado) | Retorna o status das configurações salvas no banco D1 (`app_settings`) sem expor chaves secretas. |
+| `POST` | `/api/settings` | **Senha Admin** | Salva/atualiza URL do OmniRoute, API Key, Modelo Gemini, GitHub Token e Senha de Admin direto no banco D1. |
+
+---
+
+## 💻 Desenvolvimento Local e Testes Automatizados (Opcional)
+
+Se desejar rodar localmente ou executar a suíte de testes automatizados (`node:test`):
 
 ```bash
 npm install
-```
-
-### 2. Criar o banco de dados D1 na Cloudflare
-
-Autentique-se na Cloudflare e crie o banco `git-visao-db`:
-
-```bash
-npx wrangler login
-npx wrangler d1 create git-visao-db
-```
-
-O comando retornará um bloco semelhante a este:
-
-```toml
-[[d1_databases]]
-binding = "DB"
-database_name = "git-visao-db"
-database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-```
-
-Copie o `database_id` gerado e atualize o arquivo [`wrangler.toml`](./wrangler.toml):
-
-```toml
-name = "git-visao"
-main = "src/index.ts"
-compatibility_date = "2025-02-01"
-
-[vars]
-OMNIROUTE_MODEL = "gemini-2.5-flash"
-PUBLIC_APP_TITLE = "GitVisão • Catálogo de Repositórios"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "git-visao-db"
-database_id = "SEU_DATABASE_ID_AQUI"
-migrations_dir = "migrations"
-```
-
-### 3. Aplicar as migrações do banco D1
-
-Para desenvolvimento local:
-
-```bash
-npm run db:migrate:local
-```
-
-Para o banco de produção na Cloudflare:
-
-```bash
-npm run db:migrate:remote
-```
-
----
-
-## 🔐 Configuração de Variáveis e Secrets (`wrangler secret`)
-
-O Worker utiliza as seguintes variáveis/secrets:
-
-| Nome da Variável / Secret | Obrigatório? | Descrição |
-| :--- | :---: | :--- |
-| `ADMIN_PASSWORD` | **Sim** | Senha exigida para cadastrar novos repositórios ou forçar regeração com IA. Consultas a repositórios já existentes são públicas. |
-| `OMNIROUTE_BASE_URL` | Recomendado | URL base do seu gateway OmniRoute compatível com OpenAI (ex: `https://seu-omniroute.seudominio.com/v1`). |
-| `OMNIROUTE_API_KEY` | Recomendado | Chave de API do OmniRoute (ou chave compatível) para chamar o modelo Gemini. |
-| `OMNIROUTE_MODEL` | Opcional | Definido em `wrangler.toml` (padrão: `gemini-2.5-flash`). |
-| `GITHUB_TOKEN` | Opcional | Token pessoal do GitHub (`ghp_...`) para elevar o limite de requisições da API do GitHub de 60/h para 5.000/h. |
-| `PUBLIC_APP_TITLE` | Opcional | Título exibido no cabeçalho da aplicação web. |
-
-Configure os secrets em produção executando:
-
-```bash
-npx wrangler secret put ADMIN_PASSWORD
-npx wrangler secret put OMNIROUTE_BASE_URL
-npx wrangler secret put OMNIROUTE_API_KEY
-npx wrangler secret put GITHUB_TOKEN
-```
-
-> **💡 Dica para ambiente local (`.dev.vars`):**
-> Crie um arquivo `.dev.vars` na raiz do projeto para rodar `npm run dev`:
-> ```env
-> ADMIN_PASSWORD=sua_senha_super_secreta
-> OMNIROUTE_BASE_URL=https://seu-omniroute.exemplo.com/v1
-> OMNIROUTE_API_KEY=sk-omniroute-xxxx
-> GITHUB_TOKEN=ghp_xxxx
-> ```
-
----
-
-## 🚀 Como Subir para o GitHub e Fazer o Deploy na Cloudflare
-
-Primeiro, crie um repositório no GitHub e envie o código:
-
-```bash
-git init
-git add .
-git commit -m "feat: sistema completo GitVisão com Cloudflare Workers, D1 e OmniRoute"
-git branch -M main
-git remote add origin https://github.com/SEU_USUARIO/git-visao.git
-git push -u origin main
-```
-
-Você pode escolher **qualquer uma das duas opções abaixo** para manter o deploy automático a cada `git push`:
-
----
-
-### Opção A: Integração Nativa da Cloudflare (Workers Builds conectado direto ao GitHub)
-
-Ideal se você quer gerenciar tudo pelo painel da Cloudflare sem configurar secrets no GitHub:
-
-1. Acesse o [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Compute (Workers & Pages)**.
-2. Clique em **Create** → **Workers** → **Import a repository** (Conectar ao GitHub).
-3. Selecione o repositório `git-visao` e a branch de produção `main`.
-4. Em **Build configuration**:
-   - **Build command**: `npx wrangler d1 migrations apply git-visao-db --remote` (ou deixe em branco caso já tenha aplicado a migração)
-   - **Deploy command**: `npx wrangler deploy`
-5. Após a criação, vá na aba **Settings** → **Variables and Secrets** do Worker no painel da Cloudflare e adicione:
-   - `ADMIN_PASSWORD` (Secret)
-   - `OMNIROUTE_BASE_URL` (Secret ou Text)
-   - `OMNIROUTE_API_KEY` (Secret)
-   - `GITHUB_TOKEN` (Secret opcional)
-6. Pronto! Todo `push` na branch `main` fará o deploy automático na Cloudflare.
-
----
-
-### Opção B: Deploy Automático via GitHub Actions (`.github/workflows/deploy.yml`)
-
-O projeto já inclui o workflow [`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml) que executa os testes automatizados (`npm test`), aplica as migrações no banco D1 remoto e publica o Worker.
-
-1. No painel da Cloudflare, gere um **API Token** (My Profile → API Tokens → Create Token → use o template **Edit Cloudflare Workers** e inclua permissão de **D1:Edit**).
-2. Copie também o seu **Account ID** na página inicial de Workers & Pages da Cloudflare.
-3. No seu repositório do GitHub, acesse **Settings** → **Secrets and variables** → **Actions** → **New repository secret** e cadastre:
-   - `CLOUDFLARE_API_TOKEN`: Seu token da API da Cloudflare.
-   - `CLOUDFLARE_ACCOUNT_ID`: Seu ID de conta da Cloudflare.
-4. Faça qualquer `push` para a branch `main` (ou acione manualmente na aba **Actions** → **Deploy GitVisão to Cloudflare Workers** → **Run workflow**).
-
----
-
-## 🧪 Rodando os Testes Automatizados
-
-O projeto possui suíte de testes nativa com `node:test` validando o parser de URLs do GitHub, as 5 variações de template "Pega a Visão", a autenticação por senha e todas as rotas da API do Worker + cache D1:
-
-```bash
 npm test
+npm run dev
 ```
