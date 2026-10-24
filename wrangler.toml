@@ -3,8 +3,7 @@ main = "src/index.ts"
 compatibility_date = "2025-02-24"
 compatibility_flags = ["nodejs_compat"]
 
-# keep_vars evita que deploys do GitHub (Sync fork) removam variáveis e segredos
-# configurados no Cloudflare Dashboard.
+# keep_vars evita que deploys do GitHub removam variáveis e segredos configurados no Cloudflare Dashboard
 keep_vars = true
 
 [observability]
@@ -12,20 +11,10 @@ enabled = true
 
 [vars]
 ADMIN_PASSWORD = "admin"
-OMNIROUTE_BASE_URL = ""
-OMNIROUTE_API_KEY = ""
 OMNIROUTE_MODEL = "gemini-2.5-flash"
-GITHUB_TOKEN = ""
 PUBLIC_APP_TITLE = "GitVisão • Catálogo Pega a Visão"
 
-# Banco D1 provisionado automaticamente pela Cloudflare no primeiro deploy via GitHub.
 [[d1_databases]]
 binding = "DB"
 database_name = "git_visao_db"
-
-[[kv_namespaces]]
-binding = "OMNI_KEYS"
-
-[[kv_namespaces]]
-binding = "GITVISAO_KV"
-
+database_id = "4ec3a001-57c8-4e0d-a9d0-f8b2934e55f9"
