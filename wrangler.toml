@@ -3,7 +3,7 @@ main = "src/index.ts"
 compatibility_date = "2025-02-24"
 compatibility_flags = ["nodejs_compat"]
 
-# keep_vars evita que deploys do GitHub removam variáveis e segredos configurados no Cloudflare Dashboard
+# keep_vars evita que deploys do GitHub removam variaveis e segredos configurados no Cloudflare Dashboard
 keep_vars = true
 
 [observability]
