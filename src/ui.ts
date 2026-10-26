@@ -158,13 +158,23 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
       <p class="text-xs sm:text-sm text-amber-200/95 leading-relaxed">
         💡 Primeiro acesso: a senha inicial de admin é <code class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200 font-mono font-bold">admin</code>. Clique em <button id="banner-open-settings-btn" type="button" class="font-bold text-amber-300 underline hover:text-white cursor-pointer">⚙️ Configurar IA &amp; Senha</button> para conectar seu OmniRoute e definir sua senha definitiva (salva no banco D1, à prova de atualizações do GitHub).
       </p>
-      <button
-        id="banner-settings-cta-btn"
-        type="button"
-        class="shrink-0 px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 font-bold text-xs transition cursor-pointer"
-      >
-        ⚙️ Configurar IA &amp; Senha
-      </button>
+      <div class="flex items-center gap-2 shrink-0">
+        <button
+          id="banner-settings-cta-btn"
+          type="button"
+          class="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 font-bold text-xs transition cursor-pointer"
+        >
+          ⚙️ Configurar IA &amp; Senha
+        </button>
+        <button
+          id="banner-dismiss-btn"
+          type="button"
+          title="Dispensar aviso"
+          class="p-2 rounded-xl text-amber-300 hover:text-white hover:bg-white/10 transition cursor-pointer font-bold text-sm"
+        >
+          ✕
+        </button>
+      </div>
     </div>
 
     <!-- Painel Principal: Checar ou Cadastrar Repositório -->
@@ -1006,7 +1016,10 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
         dot.className = 'w-2 h-2 rounded-full ' + (omni ? 'bg-emerald-400 animate-pulse' : 'bg-sky-400');
         text.textContent = (omni ? 'OmniRoute (' + model + ') + D1' : 'Smart Fallback (' + model + ') + D1');
 
-        if (usingDefaultPassword || !omni) {
+        const bannerDismissed = localStorage.getItem('gitvisao_dismiss_admin_notice') === '1';
+
+        // O banner de primeiro acesso so aparece se a senha de admin AINDA for admin e nao tiver sido dispensado
+        if (usingDefaultPassword && !bannerDismissed) {
           banner.classList.remove('hidden');
         } else {
           banner.classList.add('hidden');
@@ -1695,6 +1708,14 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
     document.getElementById('open-settings-btn').addEventListener('click', openSettingsModal);
     document.getElementById('banner-open-settings-btn').addEventListener('click', openSettingsModal);
     document.getElementById('banner-settings-cta-btn').addEventListener('click', openSettingsModal);
+    const bannerDismissBtn = document.getElementById('banner-dismiss-btn');
+    if (bannerDismissBtn) {
+      bannerDismissBtn.addEventListener('click', () => {
+        localStorage.setItem('gitvisao_dismiss_admin_notice', '1');
+        const banner = document.getElementById('first-access-banner');
+        if (banner) banner.classList.add('hidden');
+      });
+    }
     document.getElementById('settings-close-btn').addEventListener('click', closeSettingsModal);
     document.getElementById('settings-cancel-btn').addEventListener('click', closeSettingsModal);
     document.getElementById('settings-modal').addEventListener('click', (e) => {
@@ -1754,6 +1775,9 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
         document.getElementById('settings-github-token').value = '';
         document.getElementById('admin-password-input').value = newPassword || currentPassword;
 
+        localStorage.setItem('gitvisao_dismiss_admin_notice', '1');
+        const banner = document.getElementById('first-access-banner');
+        if (banner) banner.classList.add('hidden');
         await loadHealth();
         closeSettingsModal();
         showToast('💾 Configurações salvas no Banco D1 com sucesso!');
