@@ -22,22 +22,6 @@ export function extractAdminPassword(request: Request, bodyPassword?: string): s
     return bodyPassword.trim();
   }
 
-  // 4. Query Params da URL (?password=..., ?key=..., ?token=..., ?apiKey=...)
-  try {
-    const url = new URL(request.url);
-    const queryCandidate =
-      url.searchParams.get('password') ||
-      url.searchParams.get('key') ||
-      url.searchParams.get('token') ||
-      url.searchParams.get('apiKey') ||
-      url.searchParams.get('api_key');
-    if (queryCandidate && queryCandidate.trim()) {
-      return queryCandidate.trim();
-    }
-  } catch {
-    // ignore invalid URL
-  }
-
   return '';
 }
 

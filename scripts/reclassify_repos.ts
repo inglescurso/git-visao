@@ -111,11 +111,11 @@ export function parseCliArgs(argv: string[] = process.argv.slice(2)): CliConfig 
   const rawTarget =
     getArg('--target') ||
     process.env.TARGET_URL ||
-    'https://vision.24hs.eu.org';
+    'http://localhost:8787';
   const targetUrl = rawTarget.replace(/\/+$/, '');
 
   const adminPassword =
-    getArg('--password') || process.env.ADMIN_PASSWORD || '12131415';
+    getArg('--password') || process.env.ADMIN_PASSWORD || '';
 
   const rawLimit = getArg('--limit') || process.env.LIMIT;
   const limit = rawLimit ? parseInt(rawLimit, 10) : undefined;

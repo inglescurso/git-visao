@@ -24,6 +24,7 @@ import {
 } from '../src/templates.ts';
 import { generateFallbackSummary } from '../src/ai.ts';
 import { extractAdminPassword, verifyAdminPassword } from '../src/auth.ts';
+import { createSqliteD1, insertCatalogRepo } from './helpers/sqlite-d1.ts';
 import worker from '../src/index.ts';
 import type { Env, GitHubRepoMetadata, RepoRecord } from '../src/types.ts';
 import {
@@ -532,10 +533,12 @@ test('4. Rotas da API do Worker (/api/health, /api/repos, /api/check e POST /api
   // GET /api/health
   const healthRes = await worker.fetch(new Request('https://gitvisao.local/api/health'), env);
   assert.equal(healthRes.status, 200);
-  const healthData = (await healthRes.json()) as { ok: boolean; database: string; categories: string[] };
+  const healthData = (await healthRes.json()) as Record<string, unknown>;
   assert.equal(healthData.ok, true);
-  assert.equal(healthData.database, 'connected');
-  assert.ok(healthData.categories.length >= 6);
+  // A saúde pública não expõe nada de configuração.
+  for (const leaked of ['omnirouteModel', 'omnirouteConfigured', 'usingDefaultPassword', 'githubTokenConfigured']) {
+    assert.equal(leaked in healthData, false, `/api/health não deve expor ${leaked}`);
+  }
 
   // GET /api/repos (deve conter os 5 repositórios iniciais do seed)
   const listRes = await worker.fetch(new Request('https://gitvisao.local/api/repos'), env);
@@ -570,12 +573,41 @@ test('4. Rotas da API do Worker (/api/health, /api/repos, /api/check e POST /api
   assert.equal(checkNewData.ok, true);
   assert.equal(checkNewData.exists, false);
 
-  // POST /api/repos para repositório JÁ EXISTENTE deve retornar cache (200) SEM exigir senha!
-  const postCachedRes = await worker.fetch(
+  // Sem senha, as rotas de admin respondem 401.
+  const noAuthItems = await worker.fetch(
+    new Request('https://gitvisao.local/api/admin/ingest/items'),
+    env
+  );
+  assert.equal(noAuthItems.status, 401);
+
+  // POST /api/repos exige senha de admin SEMPRE (inclusive para repositório já existente).
+  const postNoPassRes = await worker.fetch(
     new Request('https://gitvisao.local/api/repos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ repo: 'ArnasDon/wacrm' })
+    }),
+    env
+  );
+  assert.equal(postNoPassRes.status, 401);
+
+  // Senha na URL não é mais aceita.
+  const postQueryPassRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/repos?password=admin-visao-secret', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repo: 'ArnasDon/wacrm' })
+    }),
+    env
+  );
+  assert.equal(postQueryPassRes.status, 401);
+
+  // Com a senha, repositório existente devolve o cache (200).
+  const postCachedRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/repos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repo: 'ArnasDon/wacrm', password: 'admin-visao-secret' })
     }),
     env
   );
@@ -680,19 +712,20 @@ test('5. Painel Zero-CLI (/api/settings): senha padrão "admin" inicial e persis
   };
 
   // 1. Verifica que instalação limpa usa a senha padrão "admin" e omnirouteConfigured = false
-  const initialHealthRes = await worker.fetch(
-    new Request('https://gitvisao.local/api/health'),
+  const initialStatusRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/admin/status', {
+      headers: { 'X-Admin-Password': 'admin' }
+    }),
     cleanEnv
   );
-  assert.equal(initialHealthRes.status, 200);
-  const initialHealth = (await initialHealthRes.json()) as {
+  assert.equal(initialStatusRes.status, 200);
+  const initialStatus = (await initialStatusRes.json()) as {
     ok: boolean;
-    usingDefaultPassword: boolean;
-    omnirouteConfigured: boolean;
+    settings: { usingDefaultPassword: boolean; hasOmnirouteApiKey: boolean };
   };
-  assert.equal(initialHealth.ok, true);
-  assert.equal(initialHealth.usingDefaultPassword, true);
-  assert.equal(initialHealth.omnirouteConfigured, false);
+  assert.equal(initialStatus.ok, true);
+  assert.equal(initialStatus.settings.usingDefaultPassword, true);
+  assert.equal(initialStatus.settings.hasOmnirouteApiKey, false);
 
   // 2. Verifica que GET /api/settings aceita a senha padrão "admin"
   const getSettingsInitialRes = await worker.fetch(
@@ -768,18 +801,18 @@ test('5. Painel Zero-CLI (/api/settings): senha padrão "admin" inicial e persis
   assert.equal(newPasswordData.omnirouteModel, 'gemini-2.5-pro');
 
   // 6. Healthcheck reflete OmniRoute configurado e senha definitiva ativa
-  const finalHealthRes = await worker.fetch(
-    new Request('https://gitvisao.local/api/health'),
+  const finalStatusRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/admin/status', {
+      headers: { 'X-Admin-Password': 'minha-nova-senha' }
+    }),
     cleanEnv
   );
-  const finalHealth = (await finalHealthRes.json()) as {
-    usingDefaultPassword: boolean;
-    omnirouteConfigured: boolean;
-    omnirouteModel: string;
+  const finalStatus = (await finalStatusRes.json()) as {
+    settings: { usingDefaultPassword: boolean; hasOmnirouteApiKey: boolean; omnirouteModel: string };
   };
-  assert.equal(finalHealth.usingDefaultPassword, false);
-  assert.equal(finalHealth.omnirouteConfigured, true);
-  assert.equal(finalHealth.omnirouteModel, 'gemini-2.5-pro');
+  assert.equal(finalStatus.settings.usingDefaultPassword, false);
+  assert.equal(finalStatus.settings.hasOmnirouteApiKey, true);
+  assert.equal(finalStatus.settings.omnirouteModel, 'gemini-2.5-pro');
 });
 
 test('6. Persistência Híbrida (KV + D1): precedência do KV sobre env após reset e restauração de backup do KV para D1 vazio', async () => {
@@ -846,17 +879,18 @@ test('6. Persistência Híbrida (KV + D1): precedência do KV sobre env após re
   assert.equal(resolved.usingDefaultPassword, false);
 
   // Também verifica via chamada HTTP no Worker com as variáveis resetadas
-  const healthRes = await worker.fetch(
-    new Request('https://gitvisao.local/api/health'),
+  const statusRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/admin/status', {
+      headers: { 'X-Admin-Password': 'kv-super-secret-pass' }
+    }),
     envAfterReset
   );
-  assert.equal(healthRes.status, 200);
-  const healthData = (await healthRes.json()) as {
-    usingDefaultPassword: boolean;
-    omnirouteModel: string;
+  assert.equal(statusRes.status, 200);
+  const statusData = (await statusRes.json()) as {
+    settings: { usingDefaultPassword: boolean; omnirouteModel: string };
   };
-  assert.equal(healthData.usingDefaultPassword, false);
-  assert.equal(healthData.omnirouteModel, 'gemini-2.5-pro');
+  assert.equal(statusData.settings.usingDefaultPassword, false);
+  assert.equal(statusData.settings.omnirouteModel, 'gemini-2.5-pro');
 
   // B. Restauração de backup do KV para o D1 quando o D1 inicia vazio
   const backupKv = createInMemoryKV();
@@ -1184,8 +1218,8 @@ test('9. QA & Batch Reclassification: Validação da Ficha Técnica no WhatsApp,
 
   const cliDefault = parseCliArgs([]);
   assert.equal(cliDefault.dryRun, false);
-  assert.equal(cliDefault.targetUrl, 'https://vision.24hs.eu.org');
-  assert.equal(cliDefault.adminPassword, '12131415');
+  assert.equal(cliDefault.targetUrl, 'http://localhost:8787');
+  assert.equal(cliDefault.adminPassword, '');
 
   // 4. Validação de checkpoint do reclassify_repos (loadProgress / saveProgress)
   const testCheckpointFile = path.join(__dirname, 'test_reclassify_progress.json');
@@ -1209,7 +1243,7 @@ test('9. QA & Batch Reclassification: Validação da Ficha Técnica no WhatsApp,
   }
 });
 
-test('10. Porta de Entrada Pública & Webhooks para Bots (/api/webhook, /api/ingest, extração de texto e autenticação flexível)', async () => {
+test('10. Única porta de entrada: POST /api/repos só com senha de admin (X-API-Key aceito); rotas antigas de webhook foram removidas', async () => {
   const env: Env = {
     DB: createInMemoryD1(),
     GITVISAO_KV: createInMemoryKV(),
@@ -1218,109 +1252,85 @@ test('10. Porta de Entrada Pública & Webhooks para Bots (/api/webhook, /api/ing
     PUBLIC_APP_TITLE: 'GitVisão Bot API'
   };
 
-  // 1. Extração de link do GitHub solto dentro de mensagem de chat
   const msgFromChat = 'Galera, recomendo muito dar uma olhada neste projeto: https://github.com/browseros-ai/BrowserOS - muito rápido!';
   const parsedFromMsg = parseGitHubRepoInput(msgFromChat);
   assert.ok(parsedFromMsg);
   assert.equal(parsedFromMsg.fullName, 'browseros-ai/BrowserOS');
   assert.equal(parsedFromMsg.repoKey, 'browseros-ai/browseros');
 
-  // 2. Chamada via POST /api/webhook com payload flexível { text: ... } para repo existente
-  const webhookRes = await worker.fetch(
-    new Request('https://gitvisao.local/api/webhook', {
+  for (const route of ['/api/webhook', '/api/ingest', '/api/telegram-webhook']) {
+    const res = await worker.fetch(
+      new Request('https://gitvisao.local' + route, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: msgFromChat })
+      }),
+      env
+    );
+    assert.equal(res.status, 404, route + ' deve responder 404');
+  }
+
+  const noPass = await worker.fetch(
+    new Request('https://gitvisao.local/api/repos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: msgFromChat })
+      body: JSON.stringify({ repo: msgFromChat })
     }),
     env
   );
-  assert.equal(webhookRes.status, 200);
-  const webhookData = (await webhookRes.json()) as {
-    ok: boolean;
-    cached: boolean;
-    fullName: string;
-    catalogUrl: string;
-    whatsappText: string;
-  };
-  assert.equal(webhookData.ok, true);
-  assert.equal(webhookData.cached, true);
-  assert.equal(webhookData.fullName, 'browseros-ai/BrowserOS');
-  assert.ok(webhookData.whatsappText.length > 50);
-  assert.ok(webhookData.catalogUrl.includes('browseros-ai%2FBrowserOS'));
+  assert.equal(noPass.status, 401);
 
-  // 3. Chamada via POST /api/ingest com query param ?key=... e payload { url: ... }
-  const ingestQueryRes = await worker.fetch(
-    new Request('https://gitvisao.local/api/ingest?key=senha-bot-secreta', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: 'https://github.com/ArnasDon/wacrm' })
-    }),
-    env
-  );
-  assert.equal(ingestQueryRes.status, 200);
-  const ingestQueryData = (await ingestQueryRes.json()) as { ok: boolean; cached: boolean; fullName: string };
-  assert.equal(ingestQueryData.ok, true);
-  assert.equal(ingestQueryData.fullName, 'ArnasDon/wacrm');
-
-  // 4. Chamada com Header X-API-Key
   const apiKeyRes = await worker.fetch(
     new Request('https://gitvisao.local/api/repos', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': 'senha-bot-secreta'
-      },
-      body: JSON.stringify({ repo: 'ArnasDon/wacrm' })
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': 'senha-bot-secreta' },
+      body: JSON.stringify({ repo: msgFromChat })
     }),
     env
   );
   assert.equal(apiKeyRes.status, 200);
   const apiKeyData = (await apiKeyRes.json()) as { ok: boolean; cached: boolean };
   assert.equal(apiKeyData.ok, true);
+  assert.equal(apiKeyData.cached, true);
 });
 
-test('11. Telegram Channel Webhook (/api/telegram-webhook)', async () => {
-  const env: Env = {
-    DB: createInMemoryD1(),
-    GITVISAO_KV: createInMemoryKV(),
-    OMNI_KEYS: createInMemoryKV(),
-    ADMIN_PASSWORD: 'admin-password',
-    PUBLIC_APP_TITLE: 'GitVisão Telegram Bot'
-  };
+test('11. Consulta pública de repo inédito vira pedido para o admin (sem gerar resumo e sem sobrescrever o que já existe)', async () => {
+  const { db, raw } = createSqliteD1();
+  insertCatalogRepo(raw, 'acme/ja-no-catalogo');
+  const env: Env = { DB: db, ADMIN_PASSWORD: 'senha-fila-teste' };
+  const check = (repo: string) =>
+    worker.fetch(new Request('https://gitvisao.local/api/check?repo=' + encodeURIComponent(repo)), env);
 
-  const telegramPayload = {
-    update_id: 10001,
-    channel_post: {
-      message_id: 4180,
-      chat: { id: -1001234567890, title: 'Mundo Automatik', type: 'channel' },
-      date: 1729960000,
-      text: 'Confira este incrível repositório de automação de agentes: https://github.com/browseros-ai/BrowserOS vale a pena testar!'
-    }
-  };
+  const known = (await (await check('acme/ja-no-catalogo')).json()) as { exists: boolean };
+  assert.equal(known.exists, true);
+  const unknown = (await (await check('https://github.com/Acme/Inedito')).json()) as { exists: boolean; repo: unknown };
+  assert.equal(unknown.exists, false);
+  assert.equal(unknown.repo == null, true);
+  await check('acme/inedito'); // repetir não duplica
 
-  const res = await worker.fetch(
-    new Request('https://gitvisao.local/api/telegram-webhook', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(telegramPayload)
+  const list = await worker.fetch(
+    new Request('https://gitvisao.local/api/admin/ingest/items?status=requested', {
+      headers: { 'X-Admin-Password': 'senha-fila-teste' }
     }),
     env
   );
+  assert.equal(list.status, 200);
+  const data = (await list.json()) as { items: Array<{ repo_key: string; status: string; source: string }> };
+  assert.deepEqual(
+    data.items.map((i) => [i.repo_key, i.status, i.source]),
+    [['acme/inedito', 'requested', 'visitante']]
+  );
 
-  assert.equal(res.status, 200);
-  const data = (await res.json()) as { ok: boolean; cached: boolean; fullName: string };
-  assert.equal(data.ok, true);
-  assert.equal(data.cached, true);
-  assert.equal(data.fullName, 'browseros-ai/BrowserOS');
+  const anon = await worker.fetch(new Request('https://gitvisao.local/api/admin/ingest/items'), env);
+  assert.equal(anon.status, 401);
 });
-
 
 test('12. Rota /admin e Verificação de Senha (/api/auth/verify)', async () => {
   const env: Env = {
     DB: createInMemoryD1(),
     GITVISAO_KV: createInMemoryKV(),
     OMNI_KEYS: createInMemoryKV(),
-    ADMIN_PASSWORD: 'admin-password-12131415',
+    ADMIN_PASSWORD: 'admin-password-teste',
     PUBLIC_APP_TITLE: 'GitVisão Admin Test'
   };
 
@@ -1332,8 +1342,17 @@ test('12. Rota /admin e Verificação de Senha (/api/auth/verify)', async () => 
   assert.equal(adminPageRes.status, 200);
   assert.ok((adminPageRes.headers.get('content-type') || '').includes('text/html'));
   const html = await adminPageRes.text();
-  assert.ok(html.includes('admin-login-modal'));
-  assert.ok(html.includes('check-not-found-panel'));
+  assert.ok(html.includes('login-form'));
+  assert.ok(html.includes('tab-scrape'));
+  assert.ok(!html.includes('check-not-found-panel'));
+
+  const homeRes = await worker.fetch(new Request('https://gitvisao.local/'), env);
+  assert.equal(homeRes.status, 200);
+  const home = await homeRes.text();
+  assert.ok(home.includes('check-not-found-panel'));
+  for (const adminOnly of ['admin-password-input', 'settings-modal', 'generate-submit-btn', 'Área Administrativa']) {
+    assert.ok(!home.includes(adminOnly), 'home pública não deve conter ' + adminOnly);
+  }
 
   // 2. POST /api/auth/verify com senha incorreta
   const failRes = await worker.fetch(
@@ -1353,7 +1372,7 @@ test('12. Rota /admin e Verificação de Senha (/api/auth/verify)', async () => 
     new Request('https://gitvisao.local/api/auth/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: 'admin-password-12131415' })
+      body: JSON.stringify({ password: 'admin-password-teste' })
     }),
     env
   );

@@ -10,10 +10,24 @@ import {
   type RuntimeSettingsUpdates,
   upsertRepository
 } from './db.ts';
+import { EvolutionError, fetchEvolutionGroups, isEvolutionConfigured } from './evolution.ts';
 import { fetchGitHubRepoMetadata, parseGitHubRepoInput } from './github.ts';
-import { CATEGORIES, TEMPLATE_VARIATIONS } from './templates.ts';
+import {
+  countIngestLog,
+  getIngestConfig,
+  getIngestState,
+  listIngestLog,
+  maskIngestConfig,
+  recordVisitorRequest,
+  saveIngestConfig,
+  type IngestConfigPatch,
+  type IngestStatus
+} from './ingest-db.ts';
+import { createIngestDeps } from './ingest-deps.ts';
+import { reviewIngestItem, runIngest } from './ingest.ts';
 import type { Env, RuntimeSettings, TemplateType } from './types.ts';
-import { renderAppHtml } from './ui.ts';
+import { renderAdminHtml } from './ui-admin.ts';
+import { renderPublicHtml } from './ui-public.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -21,13 +35,19 @@ const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Admin-Password'
 };
 
+const HTML_HEADERS: Record<string, string> = {
+  'Content-Type': 'text/html; charset=utf-8',
+  'Cache-Control': 'no-store',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'no-referrer'
+};
+
+const INGEST_STATUSES: IngestStatus[] = ['requested', 'pending', 'error', 'ignored', 'added'];
+
 function jsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      ...CORS_HEADERS
-    }
+    headers: { 'Content-Type': 'application/json; charset=utf-8', ...CORS_HEADERS }
   });
 }
 
@@ -46,7 +66,7 @@ function maskSecret(secret: string): string {
   return `${clean.slice(0, 4)}...${clean.slice(-4)}`;
 }
 
-function buildPublicSettingsView(settings: RuntimeSettings) {
+function buildSettingsView(settings: RuntimeSettings) {
   return {
     usingDefaultPassword: settings.usingDefaultPassword,
     publicAppTitle: settings.publicAppTitle,
@@ -59,10 +79,12 @@ function buildPublicSettingsView(settings: RuntimeSettings) {
   };
 }
 
-async function loadEffectiveContext(env: Env): Promise<{
+interface EffectiveContext {
   settings: RuntimeSettings;
   effectiveEnv: Env;
-}> {
+}
+
+async function loadEffectiveContext(env: Env): Promise<EffectiveContext> {
   await ensureDatabaseInitialized(env.DB, env);
   const settings = await getRuntimeSettings(env.DB, env);
   const effectiveEnv: Env = {
@@ -77,6 +99,118 @@ async function loadEffectiveContext(env: Env): Promise<{
   return { settings, effectiveEnv };
 }
 
+async function readJson<T extends object>(request: Request): Promise<T> {
+  try {
+    return ((await request.json()) as T) ?? ({} as T);
+  } catch {
+    return {} as T;
+  }
+}
+
+const UNAUTHORIZED = {
+  ok: false,
+  requiresPassword: true,
+  error: 'Senha de administrador inválida ou ausente.'
+};
+
+async function handleAdminApi(
+  request: Request,
+  env: Env,
+  pathname: string,
+  searchParams: URLSearchParams,
+  ctx: EffectiveContext
+): Promise<Response | null> {
+  const { settings, effectiveEnv } = ctx;
+
+  if (request.method === 'GET' && pathname === '/api/admin/status') {
+    const [ingestConfig, state, counts] = await Promise.all([
+      getIngestConfig(env.DB, env),
+      getIngestState(env.DB),
+      countIngestLog(env.DB)
+    ]);
+    const total = await env.DB.prepare('SELECT COUNT(*) AS total FROM repositories').first<{
+      total: number;
+    }>();
+    return jsonResponse({
+      ok: true,
+      settings: buildSettingsView(settings),
+      ingest: maskIngestConfig(ingestConfig),
+      lastRun: state.lastRun,
+      counts,
+      catalogTotal: Number(total?.total || 0)
+    });
+  }
+
+  if (request.method === 'POST' && pathname === '/api/admin/ingest/config') {
+    const body = await readJson<IngestConfigPatch>(request);
+    const saved = await saveIngestConfig(env.DB, body, env);
+    return jsonResponse({ ok: true, ingest: maskIngestConfig(saved) });
+  }
+
+  if (request.method === 'POST' && pathname === '/api/admin/ingest/groups') {
+    const config = await getIngestConfig(env.DB, env);
+    if (!isEvolutionConfigured(config)) {
+      return jsonResponse(
+        {
+          ok: false,
+          error: 'Salve URL, chave e instância da Evolution API antes de listar os grupos.'
+        },
+        400
+      );
+    }
+    try {
+      const groups = await fetchEvolutionGroups(config);
+      return jsonResponse({ ok: true, groups });
+    } catch (err) {
+      const status = err instanceof EvolutionError ? 502 : 500;
+      return jsonResponse(
+        { ok: false, error: err instanceof Error ? err.message : 'Falha ao listar grupos.' },
+        status
+      );
+    }
+  }
+
+  if (request.method === 'POST' && pathname === '/api/admin/ingest/run') {
+    const body = await readJson<{ fullBackfill?: boolean }>(request);
+    const summary = await runIngest(env.DB, env, createIngestDeps(env, effectiveEnv), {
+      trigger: 'manual',
+      fullBackfill: body.fullBackfill === true
+    });
+    return jsonResponse({ ok: true, summary });
+  }
+
+  if (request.method === 'GET' && pathname === '/api/admin/ingest/items') {
+    const raw = searchParams.get('status') as IngestStatus | null;
+    const status = raw && INGEST_STATUSES.includes(raw) ? raw : undefined;
+    const items = await listIngestLog(env.DB, { status, limit: 200 });
+    return jsonResponse({ ok: true, items });
+  }
+
+  if (request.method === 'POST' && pathname === '/api/admin/ingest/review') {
+    const body = await readJson<{ repoKey?: string; action?: string }>(request);
+    if (
+      !body.repoKey ||
+      (body.action !== 'approve' && body.action !== 'dismiss' && body.action !== 'retry')
+    ) {
+      return jsonResponse(
+        { ok: false, error: 'Informe repoKey e action (approve, dismiss ou retry).' },
+        400
+      );
+    }
+    const result = await reviewIngestItem(
+      env.DB,
+      createIngestDeps(env, effectiveEnv),
+      body.repoKey,
+      body.action
+    );
+    return jsonResponse(result, result.ok ? 200 : 422);
+  }
+
+  // `settings` fica referenciado para futuras rotas que precisem dele.
+  void settings;
+  return null;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === 'OPTIONS') {
@@ -87,211 +221,32 @@ export default {
     const { pathname, searchParams } = url;
 
     try {
-      // 1. Frontend SPA (Home pública ou rota /admin)
-      if (
-        request.method === 'GET' &&
-        (pathname === '/' || pathname === '/index.html' || pathname === '/admin')
-      ) {
-        let effectiveEnv = env;
+      // 1. Páginas: home pública (só consulta) e /admin (toda a gestão)
+      if (request.method === 'GET' && (pathname === '/' || pathname === '/index.html')) {
+        let title = env.PUBLIC_APP_TITLE;
         if (env.DB) {
           try {
-            const ctx = await loadEffectiveContext(env);
-            effectiveEnv = ctx.effectiveEnv;
+            title = (await loadEffectiveContext(env)).effectiveEnv.PUBLIC_APP_TITLE;
           } catch {
-            // Fallback to raw env if DB is not ready during static HTML render
+            // usa o valor do ambiente
           }
         }
-        return new Response(renderAppHtml(effectiveEnv), {
+        return new Response(renderPublicHtml(title), { status: 200, headers: HTML_HEADERS });
+      }
+      if (request.method === 'GET' && pathname === '/admin') {
+        return new Response(renderAdminHtml(env.OMNIROUTE_MODEL), {
           status: 200,
-          headers: {
-            'Content-Type': 'text/html; charset=utf-8',
-            ...CORS_HEADERS
-          }
+          headers: { ...HTML_HEADERS, 'X-Robots-Tag': 'noindex, nofollow' }
         });
       }
 
-      // 2. Healthcheck & Config Metadata
+      // 2. Saúde (pública, sem detalhes de configuração)
       if (request.method === 'GET' && pathname === '/api/health') {
         const { settings } = await loadEffectiveContext(env);
-        return jsonResponse({
-          ok: true,
-          database: 'connected',
-          omnirouteConfigured: Boolean(
-            settings.omnirouteBaseUrl && settings.omnirouteApiKey
-          ),
-          omnirouteBaseUrl: settings.omnirouteBaseUrl ? '(configurado)' : '',
-          omnirouteModel: settings.omnirouteModel || 'gemini-2.5-flash',
-          githubTokenConfigured: Boolean(settings.githubToken),
-          adminProtected: Boolean(settings.adminPassword),
-          usingDefaultPassword: settings.usingDefaultPassword,
-          publicAppTitle: settings.publicAppTitle,
-          categories: CATEGORIES,
-          templates: Object.values(TEMPLATE_VARIATIONS)
-        });
+        return jsonResponse({ ok: true, publicAppTitle: settings.publicAppTitle });
       }
 
-      // 2.1. Validação de Senha de Administrador (Login na Área /admin)
-      if (request.method === 'POST' && pathname === '/api/auth/verify') {
-        let body: { password?: string } = {};
-        try {
-          body = (await request.json()) as typeof body;
-        } catch {
-          // Permite passar senha via header
-        }
-
-        const candidatePassword = extractAdminPassword(request, body.password);
-        const { settings } = await loadEffectiveContext(env);
-        const isAuthorized = await verifyAdminPassword(candidatePassword, settings.adminPassword);
-
-        if (!isAuthorized) {
-          return jsonResponse(
-            { ok: false, error: 'Senha de administrador incorreta.' },
-            401
-          );
-        }
-
-        return jsonResponse({
-          ok: true,
-          message: 'Autenticação de administrador realizada com sucesso.'
-        });
-      }
-
-      // 3. Get Runtime Settings (Admin Only)
-      if (request.method === 'GET' && pathname === '/api/settings') {
-        const { settings } = await loadEffectiveContext(env);
-        const providedPassword = extractAdminPassword(request);
-        const isAuthorized = await verifyAdminPassword(
-          providedPassword,
-          settings.adminPassword
-        );
-
-        if (!isAuthorized) {
-          return jsonResponse(
-            {
-              ok: false,
-              requiresPassword: true,
-              error: 'Senha de administrador inválida ou ausente para visualizar configurações.'
-            },
-            401
-          );
-        }
-
-        const view = buildPublicSettingsView(settings);
-        return jsonResponse({
-          ok: true,
-          ...view,
-          settings: view
-        });
-      }
-
-      // 4. Save Runtime Settings in D1 (Admin Only - survives GitHub Sync Fork)
-      if (
-        (request.method === 'POST' || request.method === 'PUT') &&
-        pathname === '/api/settings'
-      ) {
-        let body: {
-          currentPassword?: string;
-          password?: string;
-          newPassword?: string;
-          adminPassword?: string;
-          omnirouteBaseUrl?: string;
-          omnirouteApiKey?: string;
-          omnirouteModel?: string;
-          githubToken?: string;
-          publicAppTitle?: string;
-          clearOmnirouteApiKey?: boolean;
-          clearGithubToken?: boolean;
-        } = {};
-
-        try {
-          body = (await request.json()) as typeof body;
-        } catch {
-          return jsonResponse(
-            { ok: false, error: 'Corpo da requisição JSON inválido.' },
-            400
-          );
-        }
-
-        const { settings } = await loadEffectiveContext(env);
-        const providedPassword = extractAdminPassword(
-          request,
-          body.currentPassword || body.password
-        );
-        const isAuthorized = await verifyAdminPassword(
-          providedPassword,
-          settings.adminPassword
-        );
-
-        if (!isAuthorized) {
-          return jsonResponse(
-            {
-              ok: false,
-              requiresPassword: true,
-              error: 'Senha de administrador atual inválida.'
-            },
-            401
-          );
-        }
-
-        const updates: Partial<RuntimeSettingsUpdates> = {};
-
-        const candidateNewPassword =
-          typeof body.newPassword === 'string' && body.newPassword.trim()
-            ? body.newPassword.trim()
-            : typeof body.adminPassword === 'string' && body.adminPassword.trim()
-              ? body.adminPassword.trim()
-              : '';
-
-        if (candidateNewPassword) {
-          updates.adminPassword = candidateNewPassword;
-        }
-
-        if (typeof body.omnirouteBaseUrl === 'string') {
-          updates.omnirouteBaseUrl = body.omnirouteBaseUrl.trim();
-        }
-
-        if (body.clearOmnirouteApiKey === true) {
-          updates.omnirouteApiKey = '';
-        } else if (
-          typeof body.omnirouteApiKey === 'string' &&
-          body.omnirouteApiKey.trim() &&
-          !body.omnirouteApiKey.includes('...')
-        ) {
-          updates.omnirouteApiKey = body.omnirouteApiKey.trim();
-        }
-
-        if (typeof body.omnirouteModel === 'string' && body.omnirouteModel.trim()) {
-          updates.omnirouteModel = body.omnirouteModel.trim();
-        }
-
-        if (body.clearGithubToken === true) {
-          updates.githubToken = '';
-        } else if (
-          typeof body.githubToken === 'string' &&
-          body.githubToken.trim() &&
-          !body.githubToken.includes('...')
-        ) {
-          updates.githubToken = body.githubToken.trim();
-        }
-
-        if (typeof body.publicAppTitle === 'string' && body.publicAppTitle.trim()) {
-          updates.publicAppTitle = body.publicAppTitle.trim();
-        }
-
-        await saveRuntimeSettings(env.DB, updates, env);
-        const updatedSettings = await getRuntimeSettings(env.DB, env);
-        const view = buildPublicSettingsView(updatedSettings);
-
-        return jsonResponse({
-          ok: true,
-          message:
-            'Configurações salvas no banco D1! Elas estão protegidas mesmo se você atualizar o fork pelo GitHub.',
-          ...view,
-          settings: view
-        });
-      }
-
-      // 5. List & Search Repositories
+      // 3. Listagem pública do catálogo
       if (request.method === 'GET' && pathname === '/api/repos') {
         await loadEffectiveContext(env);
         const sortParam = searchParams.get('sort');
@@ -299,31 +254,22 @@ export default {
           sortParam === 'stars' || sortParam === 'name' || sortParam === 'recent'
             ? sortParam
             : 'recent';
-
         const limitParam = searchParams.get('limit');
-        const limit = limitParam ? Number(limitParam) : 30;
-        const cursor = searchParams.get('cursor') || undefined;
-
         const data = await listRepositories(env.DB, {
           q: searchParams.get('q') || undefined,
           category: searchParams.get('category') || undefined,
           templateType:
             searchParams.get('template') || searchParams.get('templateType') || undefined,
           sort,
-          limit,
-          cursor
+          limit: limitParam ? Number(limitParam) : 30,
+          cursor: searchParams.get('cursor') || undefined
         });
-
-        return jsonResponse({
-          ok: true,
-          ...data
-        });
+        return jsonResponse({ ok: true, ...data });
       }
 
-      // 6. Open Check Endpoint (100% public, no password required)
+      // 4. Consulta pública: só diz se existe. Se não existir, guarda o pedido para o admin.
       if (request.method === 'GET' && pathname === '/api/check') {
-        const rawRepo = searchParams.get('repo') || '';
-        const parsed = safeParseRepo(rawRepo);
+        const parsed = safeParseRepo(searchParams.get('repo') || '');
         if (!parsed) {
           return jsonResponse(
             {
@@ -334,241 +280,142 @@ export default {
             400
           );
         }
-
         await loadEffectiveContext(env);
         const existing = await findRepoByKey(env.DB, parsed.repoKey, env);
-
+        if (!existing) {
+          await recordVisitorRequest(env.DB, parsed.repoKey, parsed.fullName);
+        }
         return jsonResponse({
           ok: true,
           exists: Boolean(existing),
-          parsed,
+          fullName: parsed.fullName,
           repo: existing
         });
       }
 
-      // 7.0. Telegram Webhook Nativo (para canal https://t.me/mundoautomatik ou bots)
-      if (request.method === 'POST' && pathname === '/api/telegram-webhook') {
-        let update: any = {};
-        try {
-          update = await request.json();
-        } catch {
-          return jsonResponse({ ok: false, error: 'Payload JSON inválido.' }, 400);
+      // 5. Tudo que escreve ou configura exige senha de admin (somente cabeçalhos/corpo, nunca URL)
+      const isAdminRoute =
+        pathname === '/api/auth/verify' ||
+        pathname === '/api/settings' ||
+        pathname.startsWith('/api/admin/') ||
+        (pathname === '/api/repos' && request.method === 'POST') ||
+        (pathname.startsWith('/api/repos/') && request.method === 'DELETE');
+
+      if (isAdminRoute) {
+        const ctx = await loadEffectiveContext(env);
+        const { settings, effectiveEnv } = ctx;
+
+        let body: Record<string, unknown> = {};
+        if (request.method === 'POST' || request.method === 'PUT') {
+          body = await readJson<Record<string, unknown>>(request.clone());
+        }
+        const bodyPassword =
+          typeof (body.currentPassword ?? body.password) === 'string'
+            ? String(body.currentPassword ?? body.password)
+            : undefined;
+        const authorized = await verifyAdminPassword(
+          extractAdminPassword(request, bodyPassword),
+          settings.adminPassword
+        );
+
+        if (pathname === '/api/auth/verify') {
+          return authorized
+            ? jsonResponse({ ok: true })
+            : jsonResponse({ ok: false, error: 'Senha de administrador incorreta.' }, 401);
+        }
+        if (!authorized) {
+          return jsonResponse(UNAUTHORIZED, 401);
         }
 
-        const msg = update.channel_post || update.message || update.edited_channel_post;
-        if (!msg) {
-          return jsonResponse({ ok: true, ignored: true, message: 'Nenhum post/mensagem recebida no update.' });
+        if (request.method === 'GET' && pathname === '/api/settings') {
+          const view = buildSettingsView(settings);
+          return jsonResponse({ ok: true, ...view, settings: view });
         }
 
-        let rawText = (typeof msg.text === 'string' ? msg.text : '') || (typeof msg.caption === 'string' ? msg.caption : '');
-        const entities = Array.isArray(msg.entities) ? msg.entities : Array.isArray(msg.caption_entities) ? msg.caption_entities : [];
-        for (const ent of entities) {
-          if (ent && ent.type === 'text_link' && typeof ent.url === 'string') {
-            rawText += ` ${ent.url}`;
+        if ((request.method === 'POST' || request.method === 'PUT') && pathname === '/api/settings') {
+          const b = body as {
+            newPassword?: string;
+            omnirouteBaseUrl?: string;
+            omnirouteApiKey?: string;
+            omnirouteModel?: string;
+            githubToken?: string;
+            publicAppTitle?: string;
+            clearOmnirouteApiKey?: boolean;
+            clearGithubToken?: boolean;
+          };
+          const updates: Partial<RuntimeSettingsUpdates> = {};
+          if (typeof b.newPassword === 'string' && b.newPassword.trim()) {
+            updates.adminPassword = b.newPassword.trim();
           }
+          if (typeof b.omnirouteBaseUrl === 'string') {
+            updates.omnirouteBaseUrl = b.omnirouteBaseUrl.trim();
+          }
+          if (b.clearOmnirouteApiKey === true) {
+            updates.omnirouteApiKey = '';
+          } else if (
+            typeof b.omnirouteApiKey === 'string' &&
+            b.omnirouteApiKey.trim() &&
+            !b.omnirouteApiKey.includes('...')
+          ) {
+            updates.omnirouteApiKey = b.omnirouteApiKey.trim();
+          }
+          if (typeof b.omnirouteModel === 'string' && b.omnirouteModel.trim()) {
+            updates.omnirouteModel = b.omnirouteModel.trim();
+          }
+          if (b.clearGithubToken === true) {
+            updates.githubToken = '';
+          } else if (
+            typeof b.githubToken === 'string' &&
+            b.githubToken.trim() &&
+            !b.githubToken.includes('...')
+          ) {
+            updates.githubToken = b.githubToken.trim();
+          }
+          if (typeof b.publicAppTitle === 'string' && b.publicAppTitle.trim()) {
+            updates.publicAppTitle = b.publicAppTitle.trim();
+          }
+          await saveRuntimeSettings(env.DB, updates, env);
+          const view = buildSettingsView(await getRuntimeSettings(env.DB, env));
+          return jsonResponse({ ok: true, ...view, settings: view });
         }
 
-        const parsed = safeParseRepo(rawText);
-        if (!parsed) {
-          return jsonResponse({ ok: true, ignored: true, message: 'Nenhum repositório do GitHub identificado no post.' });
+        if (pathname.startsWith('/api/admin/')) {
+          const response = await handleAdminApi(request, env, pathname, searchParams, ctx);
+          if (response) return response;
         }
 
-        const { effectiveEnv } = await loadEffectiveContext(env);
-        const existing = await findRepoByKey(env.DB, parsed.repoKey, env);
-        let saved = existing;
-
-        if (!existing) {
+        // Inclusão manual de repositório (única porta de entrada de novos itens, só admin)
+        if (request.method === 'POST' && pathname === '/api/repos') {
+          const b = body as { repo?: string; templateType?: TemplateType; force?: boolean };
+          const parsed = safeParseRepo(b.repo || '');
+          if (!parsed) {
+            return jsonResponse(
+              { ok: false, error: 'Repositório inválido. Use owner/repo ou o link do GitHub.' },
+              400
+            );
+          }
+          const existing = await findRepoByKey(env.DB, parsed.repoKey, env);
+          if (existing && !b.force) {
+            return jsonResponse({ ok: true, cached: true, repo: existing });
+          }
           const meta = await fetchGitHubRepoMetadata(parsed.fullName, effectiveEnv.GITHUB_TOKEN);
-          const summary = await generateRepoVisaoSummary(meta, effectiveEnv);
-          saved = await upsertRepository(env.DB, meta, summary, env);
+          const summary = await generateRepoVisaoSummary(meta, effectiveEnv, b.templateType);
+          const saved = await upsertRepository(env.DB, meta, summary, env);
+          return jsonResponse({ ok: true, cached: false, repo: saved });
         }
 
-        const originUrl = url.origin || 'https://vision.24hs.eu.org';
-        const catalogUrl = `${originUrl}/?q=${encodeURIComponent(parsed.fullName)}`;
-        const resAny = saved as any;
-
-        return jsonResponse({
-          ok: true,
-          cached: Boolean(existing),
-          message: existing ? 'Repositório já existia no catálogo.' : 'Novo repositório catalogado com sucesso via Telegram!',
-          fullName: saved.fullName || resAny.full_name,
-          catalogUrl,
-          whatsappText: resAny.whatsappText || resAny.whatsapp_text || '',
-          repo: saved
-        });
-      }
-
-      // 7. Register / Summarize Repository (Porta de Entrada Pública & Webhooks para Bots)
-      if (
-        request.method === 'POST' &&
-        (pathname === '/api/repos' || pathname === '/api/webhook' || pathname === '/api/ingest')
-      ) {
-        let body: {
-          repo?: string;
-          url?: string;
-          link?: string;
-          text?: string;
-          message?: string;
-          password?: string;
-          token?: string;
-          apiKey?: string;
-          key?: string;
-          templateType?: TemplateType;
-          force?: boolean;
-        } = {};
-
-        try {
-          body = (await request.json()) as typeof body;
-        } catch {
-          return jsonResponse(
-            { ok: false, error: 'Corpo da requisição JSON inválido.' },
-            400
-          );
+        if (request.method === 'DELETE' && pathname.startsWith('/api/repos/')) {
+          const parts = pathname.replace(/^\/api\/repos\//, '').split('/').filter(Boolean);
+          if (parts.length < 2) {
+            return jsonResponse({ ok: false, error: 'Use /api/repos/:owner/:name.' }, 400);
+          }
+          const repoKey = `${decodeURIComponent(parts[0])}/${decodeURIComponent(parts[1])}`.toLowerCase();
+          const deleted = await deleteRepository(env.DB, repoKey, env);
+          if (!deleted) {
+            return jsonResponse({ ok: false, error: 'Repositório não encontrado no catálogo.' }, 404);
+          }
+          return jsonResponse({ ok: true, deleted: true, repoKey });
         }
-
-        const rawRepo =
-          body.repo ||
-          body.url ||
-          body.link ||
-          body.text ||
-          body.message ||
-          searchParams.get('repo') ||
-          searchParams.get('url') ||
-          '';
-        const parsed = safeParseRepo(rawRepo);
-        if (!parsed) {
-          return jsonResponse(
-            {
-              ok: false,
-              error:
-                'Repositório ou link do GitHub não encontrado. Envie um formato válido (ex: owner/repo, https://github.com/owner/repo ou mensagem contendo o link).'
-            },
-            400
-          );
-        }
-
-        const { settings, effectiveEnv } = await loadEffectiveContext(env);
-        const existing = await findRepoByKey(env.DB, parsed.repoKey, env);
-        const originUrl = url.origin || 'https://vision.24hs.eu.org';
-        const catalogUrl = `${originUrl}/?q=${encodeURIComponent(parsed.fullName)}`;
-
-        // Se já cadastrado no D1 e não está forçando regeração, retorna cache imediatamente (não precisa de senha)
-        if (existing && !body.force) {
-          const exAny = existing as any;
-          const whatsappText = exAny.whatsappText || exAny.whatsapp_text || '';
-          const hookTitle = exAny.hookTitle || exAny.hook_title || '';
-          const licenseBadge = exAny.licenseBadge || exAny.license_badge || 'Open Source';
-          const costBadge = exAny.costBadge || exAny.cost_badge || '100% Grátis';
-          const deployBadge = exAny.deployBadge || exAny.deploy_badge || 'Fácil';
-
-          return jsonResponse({
-            ok: true,
-            cached: true,
-            message: 'Repositório já cadastrado no catálogo!',
-            fullName: existing.fullName || exAny.full_name,
-            repoKey: existing.repoKey || exAny.repo_key,
-            catalogUrl,
-            whatsappText,
-            hookTitle,
-            category: existing.category,
-            stars: existing.stars,
-            licenseBadge,
-            costBadge,
-            deployBadge,
-            repo: existing
-          });
-        }
-
-        // Repositório inédito ou regeração forçada requer autenticação (Senha/Token/API Key)
-        const candidateSecret = body.password || body.token || body.apiKey || body.key;
-        const providedPassword = extractAdminPassword(request, candidateSecret);
-        const isAuthorized = await verifyAdminPassword(
-          providedPassword,
-          settings.adminPassword
-        );
-        if (!isAuthorized) {
-          return jsonResponse(
-            {
-              ok: false,
-              requiresPassword: true,
-              error:
-                'Senha de administrador ou API Key inválida/ausente. Passe no Header (Authorization: Bearer <senha>, X-API-Key ou X-Admin-Password), no corpo JSON ou na URL (?key=<senha>).'
-            },
-            401
-          );
-        }
-
-        const meta = await fetchGitHubRepoMetadata(
-          parsed.fullName,
-          effectiveEnv.GITHUB_TOKEN
-        );
-        const summary = await generateRepoVisaoSummary(
-          meta,
-          effectiveEnv,
-          body.templateType
-        );
-        const saved = await upsertRepository(env.DB, meta, summary, env);
-
-        return jsonResponse({
-          ok: true,
-          cached: false,
-          message: 'Repositório catalogado e resumido com sucesso!',
-          fullName: saved.fullName,
-          repoKey: saved.repoKey,
-          catalogUrl,
-          whatsappText: saved.whatsappText,
-          hookTitle: saved.hookTitle,
-          category: saved.category,
-          stars: saved.stars,
-          licenseBadge: saved.licenseBadge,
-          costBadge: saved.costBadge,
-          deployBadge: saved.deployBadge,
-          repo: saved
-        });
-      }
-
-      // 8. Delete Repository (Admin Only)
-      if (request.method === 'DELETE' && pathname.startsWith('/api/repos/')) {
-        const parts = pathname.replace(/^\/api\/repos\//, '').split('/').filter(Boolean);
-        if (parts.length < 2) {
-          return jsonResponse(
-            { ok: false, error: 'Informe owner e name na rota /api/repos/:owner/:name.' },
-            400
-          );
-        }
-
-        const repoKey = `${decodeURIComponent(parts[0])}/${decodeURIComponent(parts[1])}`.toLowerCase();
-        const { settings } = await loadEffectiveContext(env);
-        const providedPassword = extractAdminPassword(request);
-        const isAuthorized = await verifyAdminPassword(
-          providedPassword,
-          settings.adminPassword
-        );
-
-        if (!isAuthorized) {
-          return jsonResponse(
-            {
-              ok: false,
-              requiresPassword: true,
-              error: 'Senha de administrador inválida para excluir repositório.'
-            },
-            401
-          );
-        }
-
-        const deleted = await deleteRepository(env.DB, repoKey, env);
-        if (!deleted) {
-          return jsonResponse(
-            { ok: false, error: 'Repositório não encontrado no catálogo.' },
-            404
-          );
-        }
-
-        return jsonResponse({
-          ok: true,
-          deleted: true,
-          repoKey
-        });
       }
 
       return jsonResponse({ ok: false, error: 'Rota não encontrada.' }, 404);
@@ -576,5 +423,23 @@ export default {
       const message = err instanceof Error ? err.message : 'Erro interno no Worker.';
       return jsonResponse({ ok: false, error: message }, 500);
     }
+  },
+
+  // Cron Trigger (a cada 30 min): lê os grupos configurados e cataloga o que for open source.
+  async scheduled(
+    _event: unknown,
+    env: Env,
+    ctx: { waitUntil(promise: Promise<unknown>): void }
+  ): Promise<void> {
+    ctx.waitUntil(
+      (async () => {
+        try {
+          const { effectiveEnv } = await loadEffectiveContext(env);
+          await runIngest(env.DB, env, createIngestDeps(env, effectiveEnv), { trigger: 'cron' });
+        } catch (err) {
+          console.error('Falha na raspagem agendada:', err);
+        }
+      })()
+    );
   }
 };

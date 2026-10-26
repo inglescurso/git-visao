@@ -79,11 +79,11 @@ function parseCliArgs(): {
   const targetUrl = (
     getArg('--target') ||
     process.env.TARGET_URL ||
-    'https://vision.24hs.eu.org'
+    'http://localhost:8787'
   ).replace(/\/+$/, '');
 
   const adminPassword =
-    getArg('--password') || process.env.ADMIN_PASSWORD || '12131415';
+    getArg('--password') || process.env.ADMIN_PASSWORD || '';
 
   const delayMs = Number(
     getArg('--delay') || process.env.DELAY_MS || '3000'

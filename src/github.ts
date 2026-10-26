@@ -19,6 +19,20 @@ export interface CostClassification {
   costNotes: string;
 }
 
+export class GitHubApiError extends Error {
+  status: number;
+  constructor(message: string, status = 0) {
+    super(message);
+    this.name = 'GitHubApiError';
+    this.status = status;
+  }
+}
+
+/** Open source de verdade = permissiva ou copyleft. Source-available e sem licença não entram. */
+export function isOpenSourceLicense(type: LicenseType | undefined | null): boolean {
+  return type === 'permissive' || type === 'copyleft';
+}
+
 export interface ParsedGitHubRepo {
   owner: string;
   name: string;
@@ -125,7 +139,20 @@ export function classifyLicense(
     'BSD-3-CLAUSE',
     'ISC',
     '0BSD',
-    'UNLICENSE'
+    'UNLICENSE',
+    'BSD-1-CLAUSE',
+    'ZLIB',
+    'CC0-1.0',
+    'WTFPL',
+    'BSL-1.0',
+    'ARTISTIC-2.0',
+    'MS-PL',
+    'POSTGRESQL',
+    'PYTHON-2.0',
+    'UPL-1.0',
+    'NCSA',
+    'X11',
+    'BLUEOAK-1.0.0'
   ];
 
   const COPYLEFT_SPDX = [
@@ -139,9 +166,20 @@ export function classifyLicense(
     'GPL-2.0-ONLY',
     'GPL-2.0-OR-LATER',
     'LGPL-3.0',
+    'LGPL-3.0-ONLY',
+    'LGPL-3.0-OR-LATER',
     'LGPL-2.1',
+    'LGPL-2.1-ONLY',
+    'LGPL-2.1-OR-LATER',
     'EUPL-1.2',
-    'MPL-2.0'
+    'MPL-2.0',
+    'EPL-1.0',
+    'EPL-2.0',
+    'CDDL-1.0',
+    'CDDL-1.1',
+    'MS-RL',
+    'OSL-3.0',
+    'CECILL-2.1'
   ];
 
   const SOURCE_AVAILABLE_SPDX = [
@@ -381,14 +419,18 @@ export async function fetchGitHubRepoMetadata(
 
   if (!repoRes.ok) {
     if (repoRes.status === 404) {
-      throw new Error(`Repositório "${parsed.fullName}" não encontrado no GitHub (404). Verifique se ele é público.`);
-    }
-    if (repoRes.status === 403 || repoRes.status === 429) {
-      throw new Error(
-        `Limite de requisições da API do GitHub atingido (${repoRes.status}). Configure GITHUB_TOKEN nas variáveis do Worker.`
+      throw new GitHubApiError(
+        `Repositório "${parsed.fullName}" não encontrado no GitHub (404). Verifique se ele é público.`,
+        404
       );
     }
-    throw new Error(`Falha ao consultar API do GitHub (${repoRes.status}).`);
+    if (repoRes.status === 403 || repoRes.status === 429) {
+      throw new GitHubApiError(
+        `Limite de requisições da API do GitHub atingido (${repoRes.status}). Configure GITHUB_TOKEN nas variáveis do Worker.`,
+        repoRes.status
+      );
+    }
+    throw new GitHubApiError(`Falha ao consultar API do GitHub (${repoRes.status}).`, repoRes.status);
   }
 
   const repoData = (await repoRes.json()) as {
@@ -549,5 +591,94 @@ export async function fetchGitHubRepoMetadata(
     deploy_difficulty: deployClassification.deployDifficulty,
     deploy_badge: deployClassification.deployBadge,
     deploy_method: deployClassification.deployMethod
+  };
+}
+
+export type RepoProbeResult =
+  | { kind: 'rate_limited' }
+  | { kind: 'not_found' }
+  | { kind: 'blocked'; status: number }
+  | {
+      kind: 'ok';
+      fullName: string;
+      repoKey: string;
+      archived: boolean;
+      stars: number;
+      description: string;
+      licenseSpdx: string;
+      // null = a API não informou licença (precisa inspecionar LICENSE/README)
+      licenseType: LicenseType | null;
+    };
+
+/**
+ * Sondagem barata (1 chamada) usada pela raspagem: descobre se o repositório existe e qual
+ * licença a API informa, antes de gastar README, árvore de arquivos e IA.
+ */
+export async function probeGitHubRepo(
+  input: string,
+  githubToken?: string,
+  fetchImpl: (url: string, init?: RequestInit) => Promise<Response> = fetch
+): Promise<RepoProbeResult> {
+  const parsed = parseGitHubRepoInput(input);
+  if (!parsed) return { kind: 'not_found' };
+
+  const headers: Record<string, string> = {
+    'User-Agent': 'git-visao-cloudflare-worker',
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28'
+  };
+  if (githubToken && githubToken.trim()) {
+    headers.Authorization = `Bearer ${githubToken.trim()}`;
+  }
+
+  const res = await fetchImpl(
+    `https://api.github.com/repos/${encodeURIComponent(parsed.owner)}/${encodeURIComponent(parsed.name)}`,
+    { headers }
+  );
+
+  if (res.status === 404 || res.status === 410) return { kind: 'not_found' };
+  if (res.status === 451) return { kind: 'blocked', status: 451 };
+  if (res.status === 429) return { kind: 'rate_limited' };
+  if (res.status === 403) {
+    const remaining = res.headers.get('x-ratelimit-remaining');
+    return remaining === '0' || res.headers.has('retry-after')
+      ? { kind: 'rate_limited' }
+      : { kind: 'blocked', status: 403 };
+  }
+  if (!res.ok) {
+    throw new GitHubApiError(`Falha ao consultar API do GitHub (${res.status}).`, res.status);
+  }
+
+  const data = (await res.json()) as {
+    full_name?: string;
+    archived?: boolean;
+    stargazers_count?: number;
+    description?: string | null;
+    license?: { spdx_id?: string | null; key?: string | null; name?: string | null } | null;
+  };
+
+  const fullName = data.full_name || parsed.fullName;
+  const apiSpdx = (data.license?.spdx_id || '').trim();
+  const apiKey = (data.license?.key || '').toLowerCase().trim();
+  const hasUsableLicense = Boolean(apiSpdx) && apiSpdx !== 'NOASSERTION' && apiKey !== 'other';
+
+  let licenseSpdx = '';
+  let licenseType: LicenseType | null = null;
+  if (hasUsableLicense) {
+    const classified = classifyLicense(data.license, '');
+    licenseSpdx = classified.licenseSpdx;
+    // SPDX conhecido mas fora das listas => inspeção manual (não arriscar rejeitar sem ler)
+    licenseType = classified.licenseType === 'unlicensed' ? null : classified.licenseType;
+  }
+
+  return {
+    kind: 'ok',
+    fullName,
+    repoKey: fullName.toLowerCase(),
+    archived: Boolean(data.archived),
+    stars: Number(data.stargazers_count || 0),
+    description: (data.description || '').trim(),
+    licenseSpdx,
+    licenseType
   };
 }

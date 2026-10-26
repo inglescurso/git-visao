@@ -18,3 +18,7 @@ PUBLIC_APP_TITLE = "GitVisão • Catálogo Pega a Visão"
 binding = "DB"
 database_name = "git_visao_db"
 database_id = "4ec3a001-57c8-4e0d-a9d0-f8b2934e55f9"
+
+# Raspagem do WhatsApp (Evolution API): leitura dos grupos a cada 30 minutos
+[triggers]
+crons = ["*/30 * * * *"]

@@ -1,6 +1,6 @@
 {
   "lastRunAt": "2026-10-24T19:53:48.576Z",
-  "targetUrl": "https://vision.24hs.eu.org",
+  "targetUrl": "http://localhost:8787",
   "records": {
     "browseros-ai/browseros": {
       "status": "skipped",
