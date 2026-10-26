@@ -1321,6 +1321,30 @@ test('11. Consulta pública de repo inédito vira pedido para o admin (sem gerar
     [['acme/inedito', 'requested', 'visitante']]
   );
 
+  // Excluir: remove do catálogo e marca como ignorado (a raspagem não reinclui).
+  const del = await worker.fetch(
+    new Request('https://gitvisao.local/api/admin/ingest/review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Password': 'senha-fila-teste' },
+      body: JSON.stringify({ repoKey: 'acme/ja-no-catalogo', action: 'delete' })
+    }),
+    env
+  );
+  assert.equal(del.status, 200);
+  const afterDel = (await (await check('acme/ja-no-catalogo')).json()) as { exists: boolean };
+  assert.equal(afterDel.exists, false);
+  const ignored = await worker.fetch(
+    new Request('https://gitvisao.local/api/admin/ingest/items?status=ignored', {
+      headers: { 'X-Admin-Password': 'senha-fila-teste' }
+    }),
+    env
+  );
+  const ignoredData = (await ignored.json()) as { items: Array<{ repo_key: string; reason: string }> };
+  assert.deepEqual(
+    ignoredData.items.map((i) => [i.repo_key, i.reason]),
+    [['acme/ja-no-catalogo', 'Excluído pelo admin.']]
+  );
+
   const anon = await worker.fetch(new Request('https://gitvisao.local/api/admin/ingest/items'), env);
   assert.equal(anon.status, 401);
 });

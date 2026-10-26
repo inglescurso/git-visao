@@ -67,6 +67,7 @@ const ADMIN_TEMPLATE = `<!DOCTYPE html>
     <div class="flex flex-wrap gap-2" id="tabs">
       <button class="tab on" data-tab="queue" type="button">📥 Fila de revisão</button>
       <button class="tab" data-tab="scrape" type="button">📡 Raspagem (WhatsApp)</button>
+      <button class="tab" data-tab="catalog" type="button">📚 Catálogo</button>
       <button class="tab" data-tab="add" type="button">➕ Incluir repositório</button>
       <button class="tab" data-tab="settings" type="button">🔧 Configurações</button>
     </div>
@@ -119,6 +120,19 @@ const ADMIN_TEMPLATE = `<!DOCTYPE html>
         </div>
         <div id="last-run" class="text-sm text-slate-300 space-y-1"></div>
       </div>
+    </section>
+
+    <!-- Catálogo -->
+    <section id="tab-catalog" class="hidden panel space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="font-bold">Catálogo</h2>
+          <p class="text-xs text-slate-400">Repositórios publicados. Excluir tira do catálogo e impede que a raspagem reinclua o mesmo link.</p>
+        </div>
+        <input id="cat-search" class="inp" style="max-width:260px" placeholder="Filtrar por nome..." />
+      </div>
+      <div id="cat-list" class="space-y-2"></div>
+      <button id="cat-more" class="btn2 hidden" type="button">Carregar mais</button>
     </section>
 
     <!-- Incluir -->
@@ -213,7 +227,8 @@ const ADMIN_TEMPLATE = `<!DOCTYPE html>
       t.addEventListener('click', function () {
         document.querySelectorAll('#tabs .tab').forEach(function (x) { x.classList.remove('on'); });
         t.classList.add('on');
-        ['queue', 'scrape', 'add', 'settings'].forEach(function (n) { $('tab-' + n).classList.toggle('hidden', n !== t.getAttribute('data-tab')); });
+        ['queue', 'scrape', 'catalog', 'add', 'settings'].forEach(function (n) { $('tab-' + n).classList.toggle('hidden', n !== t.getAttribute('data-tab')); });
+        if (t.getAttribute('data-tab') === 'catalog') loadCatalog(true);
       });
     });
 
@@ -263,11 +278,13 @@ const ADMIN_TEMPLATE = `<!DOCTYPE html>
             (canApprove ? '<button class="btn" data-act="approve" data-key="' + esc(it.repo_key) + '" type="button">✅ Incluir</button>' : '') +
             (it.status === 'error' ? '<button class="btn2" data-act="retry" data-key="' + esc(it.repo_key) + '" type="button">🔁 Tentar de novo</button>' : '') +
             (it.status !== 'ignored' && it.status !== 'added' ? '<button class="btn2" data-act="dismiss" data-key="' + esc(it.repo_key) + '" type="button">🚫 Dispensar</button>' : '') +
+            (it.status !== 'ignored' ? '<button class="btn2" data-act="delete" data-key="' + esc(it.repo_key) + '" type="button" style="background:#be123c">🗑️ Excluir</button>' : '') +
             '</div></div>';
         }).join('');
         box.querySelectorAll('button[data-act]').forEach(function (b) {
           b.addEventListener('click', function () {
             var act = b.getAttribute('data-act');
+            if (act === 'delete' && !confirm('Excluir ' + b.getAttribute('data-key') + '? Se estiver no catálogo, será removido.')) return;
             busy(b, true, '⏳...');
             api('/api/admin/ingest/review', 'POST', { repoKey: b.getAttribute('data-key'), action: act })
               .then(function (r) { toast(r.message || 'Feito.'); return loadStatus(); })
@@ -276,6 +293,39 @@ const ADMIN_TEMPLATE = `<!DOCTYPE html>
         });
       }).catch(function (err) { toast(err.message, 'error'); });
     }
+
+    var catCursor = null, catItems = [];
+    function loadCatalog(reset) {
+      if (reset) { catCursor = null; catItems = []; }
+      var p = new URLSearchParams(); p.set('limit', '50'); p.set('sort', 'recent');
+      var q = $('cat-search').value.trim(); if (q) p.set('q', q);
+      if (!reset && catCursor) p.set('cursor', catCursor);
+      fetch('/api/repos?' + p.toString()).then(function (r) { return r.json(); }).then(function (d) {
+        catCursor = d.nextCursor || null;
+        catItems = catItems.concat(d.items || []);
+        $('cat-list').innerHTML = catItems.length ? catItems.map(function (r) {
+          var key = String(r.repo_key || '');
+          return '<div class="p-3 rounded-xl bg-slate-900/70 border border-white/10 flex flex-wrap items-center justify-between gap-3">' +
+            '<div class="min-w-0"><span class="font-mono text-sm font-bold text-sky-400">' + esc(r.full_name) + '</span> <span class="text-xs text-slate-400">' + esc(r.license_spdx || '') + ' • ⭐ ' + esc(r.stars) + '</span>' +
+            '<p class="text-xs text-slate-400">' + esc(r.hook_title || '') + '</p></div>' +
+            '<button class="btn2" data-del="' + esc(key) + '" type="button" style="background:#be123c">🗑️ Excluir</button></div>';
+        }).join('') : '<p class="text-sm text-slate-500">Nada encontrado.</p>';
+        $('cat-more').classList.toggle('hidden', !(d.hasMore && catCursor));
+        $('cat-list').querySelectorAll('button[data-del]').forEach(function (b) {
+          b.addEventListener('click', function () {
+            var key = b.getAttribute('data-del');
+            if (!confirm('Excluir ' + key + ' do catálogo?')) return;
+            busy(b, true, '⏳...');
+            api('/api/admin/ingest/review', 'POST', { repoKey: key, action: 'delete' })
+              .then(function (r) { toast(r.message || 'Removido.'); loadCatalog(true); return loadStatus(); })
+              .catch(function (err) { toast(err.message, 'error'); busy(b, false); });
+          });
+        });
+      }).catch(function () { toast('Erro ao carregar o catálogo.', 'error'); });
+    }
+    $('cat-more').addEventListener('click', function () { loadCatalog(false); });
+    var catTimer = null;
+    $('cat-search').addEventListener('input', function () { clearTimeout(catTimer); catTimer = setTimeout(function () { loadCatalog(true); }, 300); });
 
     function renderGroups(saved, available) {
       var map = {};

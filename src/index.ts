@@ -15,11 +15,13 @@ import { fetchGitHubRepoMetadata, parseGitHubRepoInput } from './github.ts';
 import {
   countIngestLog,
   getIngestConfig,
+  getIngestLogRow,
   getIngestState,
   listIngestLog,
   maskIngestConfig,
   recordVisitorRequest,
   saveIngestConfig,
+  upsertIngestLog,
   type IngestConfigPatch,
   type IngestStatus
 } from './ingest-db.ts';
@@ -190,12 +192,37 @@ async function handleAdminApi(
     const body = await readJson<{ repoKey?: string; action?: string }>(request);
     if (
       !body.repoKey ||
-      (body.action !== 'approve' && body.action !== 'dismiss' && body.action !== 'retry')
+      (body.action !== 'approve' &&
+        body.action !== 'dismiss' &&
+        body.action !== 'retry' &&
+        body.action !== 'delete')
     ) {
       return jsonResponse(
-        { ok: false, error: 'Informe repoKey e action (approve, dismiss ou retry).' },
+        { ok: false, error: 'Informe repoKey e action (approve, dismiss, retry ou delete).' },
         400
       );
+    }
+
+    // Excluir: tira do catálogo (se estiver lá) e marca como ignorado, para a raspagem
+    // não reincluir o mesmo link se ele aparecer de novo no grupo.
+    if (body.action === 'delete') {
+      const key = body.repoKey.trim().toLowerCase();
+      const removed = await deleteRepository(env.DB, key, env);
+      const row = await getIngestLogRow(env.DB, key);
+      await upsertIngestLog(env.DB, {
+        repoKey: key,
+        fullName: row?.full_name || key,
+        status: 'ignored',
+        reason: 'Excluído pelo admin.',
+        source: row?.source,
+        sender: row?.sender,
+        messageTs: row?.message_ts
+      });
+      return jsonResponse({
+        ok: true,
+        message: removed ? 'Removido do catálogo e marcado como ignorado.' : 'Marcado como ignorado.',
+        repoKey: key
+      });
     }
     const result = await reviewIngestItem(
       env.DB,
