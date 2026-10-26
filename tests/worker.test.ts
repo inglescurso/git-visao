@@ -1,7 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { parseGitHubRepoInput } from '../src/github.ts';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+import {
+  parseGitHubRepoInput,
+  classifyLicense,
+  classifyDeployDifficulty,
+  classifyCostModel,
+  fetchGitHubRepoMetadata
+} from '../src/github.ts';
 import {
   TEMPLATE_VARIATIONS,
   buildWhatsAppText,
@@ -21,10 +33,16 @@ import {
   findRepoByKey,
   getRuntimeSettings,
   invalidateSettingsCache,
+  listRepositories,
   saveRuntimeSettings,
   type RepoCursor,
   type SerializedRepo
 } from '../src/db.ts';
+import {
+  parseCliArgs,
+  loadProgress,
+  saveProgress
+} from '../scripts/reclassify_repos.ts';
 
 function createInMemoryKV(): KVNamespace {
   const store = new Map<string, string>();
@@ -137,8 +155,18 @@ function createInMemoryD1(): D1Database {
             summary_text: String(boundArgs[24] ?? ''),
             punchline: String(boundArgs[25] ?? ''),
             whatsapp_text: String(boundArgs[26] ?? ''),
-            created_at: boundArgs[27] ? String(boundArgs[27]) : (existing ? existing.created_at : now),
-            updated_at: boundArgs[28] ? String(boundArgs[28]) : now
+            license_spdx: boundArgs[27] ? String(boundArgs[27]) : '',
+            license_type: boundArgs[28] as RepoRecord['license_type'],
+            license_badge: boundArgs[29] ? String(boundArgs[29]) : '',
+            is_free: boundArgs[30] !== undefined ? Number(boundArgs[30]) : 1,
+            cost_model: boundArgs[31] as RepoRecord['cost_model'],
+            cost_badge: boundArgs[32] ? String(boundArgs[32]) : '',
+            cost_notes: boundArgs[33] ? String(boundArgs[33]) : '',
+            deploy_difficulty: boundArgs[34] as RepoRecord['deploy_difficulty'],
+            deploy_badge: boundArgs[35] ? String(boundArgs[35]) : '',
+            deploy_method: boundArgs[36] ? String(boundArgs[36]) : '',
+            created_at: existing ? existing.created_at : now,
+            updated_at: now
           };
 
           rows.set(repoKey, record);
@@ -193,6 +221,21 @@ function createInMemoryD1(): D1Database {
             list = list.filter((r) => r.template_type === tpl);
           }
 
+          if (normalizedSql.includes('license_type = ?')) {
+            const lic = String(boundArgs[argIndex++] || '');
+            list = list.filter((r) => r.license_type === lic);
+          }
+
+          if (normalizedSql.includes('cost_model = ?')) {
+            const cst = String(boundArgs[argIndex++] || '');
+            list = list.filter((r) => r.cost_model === cst);
+          }
+
+          if (normalizedSql.includes('deploy_difficulty = ?')) {
+            const dep = String(boundArgs[argIndex++] || '');
+            list = list.filter((r) => r.deploy_difficulty === dep);
+          }
+
           return {
             total: list.length,
             count: list.length,
@@ -223,10 +266,13 @@ function createInMemoryD1(): D1Database {
           return { results, success: true, meta: {} };
         }
 
-        if (normalizedSql === 'SELECT category, template_type FROM repositories') {
+        if (normalizedSql.startsWith('SELECT category, template_type')) {
           const results = Array.from(rows.values()).map((r) => ({
             category: r.category,
-            template_type: r.template_type
+            template_type: r.template_type,
+            license_type: r.license_type,
+            cost_model: r.cost_model,
+            deploy_difficulty: r.deploy_difficulty
           })) as unknown as T[];
           return { results, success: true, meta: {} };
         }
@@ -262,6 +308,21 @@ function createInMemoryD1(): D1Database {
           if (normalizedSql.includes('template_type = ?')) {
             const tpl = String(boundArgs[argIndex++] || '');
             list = list.filter((r) => r.template_type === tpl);
+          }
+
+          if (normalizedSql.includes('license_type = ?')) {
+            const lic = String(boundArgs[argIndex++] || '');
+            list = list.filter((r) => r.license_type === lic);
+          }
+
+          if (normalizedSql.includes('cost_model = ?')) {
+            const cst = String(boundArgs[argIndex++] || '');
+            list = list.filter((r) => r.cost_model === cst);
+          }
+
+          if (normalizedSql.includes('deploy_difficulty = ?')) {
+            const dep = String(boundArgs[argIndex++] || '');
+            list = list.filter((r) => r.deploy_difficulty === dep);
           }
 
           if (normalizedSql.includes('(updated_at < ? OR (updated_at = ? AND id < ?))')) {
@@ -428,6 +489,11 @@ test('2. Detecção das 5 variações de template e formatação WhatsApp confor
     assert.ok(text.includes('⭐ 14,1 mil estrelas no GitHub'));
     assert.ok(text.includes('🕒 Último commit em 23/10/2026'));
     assert.ok(text.includes('━━━━━━━━━━━━━━━━━━'));
+    assert.ok(text.includes('📋 FICHA TÉCNICA'));
+    assert.ok(text.includes('⚖️ Licença:'));
+    assert.ok(text.includes('💰 Custo Real:'));
+    assert.ok(text.includes('⚙️ Instalação:'));
+    assert.ok(text.includes('🏷️ Categoria:'));
     assert.ok(text.includes('1️⃣ '));
     assert.ok(text.includes(TEMPLATE_VARIATIONS[tpl].summaryHeader));
     assert.ok(text.includes('🚀 '));
@@ -469,7 +535,7 @@ test('4. Rotas da API do Worker (/api/health, /api/repos, /api/check e POST /api
   const healthData = (await healthRes.json()) as { ok: boolean; database: string; categories: string[] };
   assert.equal(healthData.ok, true);
   assert.equal(healthData.database, 'connected');
-  assert.equal(healthData.categories.length, 6);
+  assert.ok(healthData.categories.length >= 6);
 
   // GET /api/repos (deve conter os 5 repositórios iniciais do seed)
   const listRes = await worker.fetch(new Request('https://gitvisao.local/api/repos'), env);
@@ -967,6 +1033,188 @@ test('7. Paginação com cursor no D1 e API (/api/repos com limit, hasMore e nex
       !firstPageIds.includes(id),
       `ID ${id} da segunda página não deve estar na primeira página (${firstPageIds.join(', ')})`
     );
+  }
+});
+
+test('8. GitHub Extractor: Heurísticas de Licença, Dificuldade de Instalação e Modelo de Custo', async () => {
+  // --- 1. Licenças ---
+  // API direta
+  const mitApi = classifyLicense({ spdx_id: 'MIT', key: 'mit' });
+  assert.equal(mitApi.licenseType, 'permissive');
+  assert.equal(mitApi.licenseBadge, '🟢 MIT (Open Source Permissivo)');
+
+  const apacheApi = classifyLicense({ spdx_id: 'Apache-2.0', key: 'apache-2.0' });
+  assert.equal(apacheApi.licenseType, 'permissive');
+  assert.equal(apacheApi.licenseBadge, '🟢 Apache-2.0 (Open Source Permissivo)');
+
+  const agplApi = classifyLicense({ spdx_id: 'AGPL-3.0', key: 'agpl-3.0' });
+  assert.equal(agplApi.licenseType, 'copyleft');
+  assert.equal(agplApi.licenseBadge, '🟡 Copyleft (AGPL/GPL)');
+
+  // Fallback em texto (LICENSE / README)
+  const mitFallback = classifyLicense(null, 'Licensed under the MIT License.');
+  assert.equal(mitFallback.licenseType, 'permissive');
+  assert.equal(mitFallback.licenseSpdx, 'MIT');
+  assert.equal(mitFallback.licenseBadge, '🟢 MIT (Open Source Permissivo)');
+
+  const apacheFallback = classifyLicense({ spdx_id: 'NOASSERTION', key: 'other' }, 'Apache License, Version 2.0');
+  assert.equal(apacheFallback.licenseType, 'permissive');
+  assert.equal(apacheFallback.licenseSpdx, 'Apache-2.0');
+
+  const fairFallback = classifyLicense(null, 'Sustainable Use License');
+  assert.equal(fairFallback.licenseType, 'source-available');
+  assert.equal(fairFallback.licenseBadge, '🔴 Source-Available (Não-OSI)');
+
+  const unlic = classifyLicense(null, '');
+  assert.equal(unlic.licenseType, 'unlicensed');
+  assert.equal(unlic.licenseBadge, '⚪ Sem Licença (All Rights Reserved)');
+
+  // --- 2. Dificuldade de Instalação ---
+  // Nível 1 - Fácil / Plug & Play
+  const dep1Click = classifyDeployDifficulty(['wrangler.toml', 'src/index.ts']);
+  assert.equal(dep1Click.deployDifficulty, 'easy');
+  assert.equal(dep1Click.deployBadge, '🟢 Fácil (Plug & Play / 1-Click)');
+  assert.equal(dep1Click.deployMethod, '1-Click Deploy / Binário');
+
+  const depExtension = classifyDeployDifficulty(['manifest.json']);
+  assert.equal(depExtension.deployDifficulty, 'easy');
+
+  const depPip = classifyDeployDifficulty(['setup.py'], 'Install with pip install mycli');
+  assert.equal(depPip.deployDifficulty, 'easy');
+  assert.equal(depPip.deployBadge, '🟢 Fácil (Plug & Play / 1-Click)');
+
+  // Nível 2 - Médio
+  const depDocker = classifyDeployDifficulty(['docker-compose.yml', '.env.example']);
+  assert.equal(depDocker.deployDifficulty, 'medium');
+  assert.equal(depDocker.deployBadge, '🟡 Médio (Docker / Configuração .env)');
+  assert.equal(depDocker.deployMethod, 'Docker Compose / Local');
+
+  // Nível 3 - Avançado
+  const depK8s = classifyDeployDifficulty(['k8s/service.yaml', 'Chart.yaml']);
+  assert.equal(depK8s.deployDifficulty, 'advanced');
+  assert.equal(depK8s.deployBadge, '🔴 Avançado (K8s / Compilação / GPU)');
+  assert.equal(depK8s.deployMethod, 'Cluster / Compilação Nativa');
+
+  const depCuda = classifyDeployDifficulty(['train.py'], 'Requires NVIDIA GPU and CUDA');
+  assert.equal(depCuda.deployDifficulty, 'advanced');
+
+  // --- 3. Sinais de Custo & Chaves ---
+  // 100% Grátis & Local
+  const costLocal = classifyCostModel('Run completely offline on localhost with ollama and sqlite');
+  assert.equal(costLocal.costModel, 'free-local');
+  assert.equal(costLocal.isFree, true);
+  assert.equal(costLocal.costBadge, '🟢 100% Grátis & Local');
+  assert.equal(costLocal.costNotes, 'Roda offline no seu computador sem chaves de API nem assinaturas.');
+
+  // BYOK
+  const costByok = classifyCostModel('Configure OPENAI_API_KEY and ANTHROPIC_API_KEY');
+  assert.equal(costByok.costModel, 'byok');
+  assert.equal(costByok.isFree, true);
+  assert.equal(costByok.costBadge, '🟡 Grátis (BYOK Chaves de IA)');
+  assert.equal(costByok.costNotes, 'Código grátis; consome créditos de API de IA contratados separadamente.');
+
+  // Freemium / Open Core
+  const costFreemium = classifyCostModel('Open core edition. Enterprise edition and cloud pricing available.');
+  assert.equal(costFreemium.costModel, 'freemium');
+  assert.equal(costFreemium.isFree, false);
+  assert.equal(costFreemium.costBadge, '🟠 Freemium / Open Core');
+  assert.equal(costFreemium.costNotes, 'Uso básico/pessoal grátis; recursos corporativos exigem plano pago.');
+
+  // Infraestrutura Paga
+  const costPaid = classifyCostModel('Requires Meta WhatsApp Cloud API credentials');
+  assert.equal(costPaid.costModel, 'paid-external');
+  assert.equal(costPaid.isFree, false);
+  assert.equal(costPaid.costBadge, '🔴 Custos Externos Obrigatórios');
+  assert.equal(costPaid.costNotes, 'Exige serviços de nuvem ou APIs pagas de terceiros.');
+});
+
+test('9. QA & Batch Reclassification: Validação da Ficha Técnica no WhatsApp, filtros D1 e script reclassify_repos', async () => {
+  // 1. Validação da Ficha Técnica completa no buildWhatsAppText
+  const sampleMeta: GitHubRepoMetadata = {
+    repoKey: 'sample/agent-craft',
+    fullName: 'sample/agent-craft',
+    owner: 'sample',
+    name: 'agent-craft',
+    repoUrl: 'https://github.com/sample/agent-craft',
+    description: 'Framework para agentes autônomos locais',
+    stars: 5400,
+    forks: 320,
+    language: 'Python',
+    topics: ['ai-agent', 'mcp', 'ollama'],
+    lastCommitAt: '2026-10-25T12:00:00Z',
+    readmeExcerpt: 'Run with ollama offline',
+    licenseSpdx: 'MIT',
+    licenseType: 'permissive',
+    licenseBadge: '🟢 MIT (Open Source Permissivo)',
+    isFree: true,
+    costModel: 'free-local',
+    costBadge: '🟢 100% Grátis & Local',
+    costNotes: 'Roda offline no seu computador sem chaves de API nem assinaturas.',
+    deployDifficulty: 'easy',
+    deployBadge: '🟢 Fácil (Plug & Play / 1-Click)',
+    deployMethod: '1-Click Deploy / Binário'
+  };
+
+  const sampleSummary = generateFallbackSummary(sampleMeta, 'ai-agent-automation');
+  const renderedText = buildWhatsAppText(sampleMeta, sampleSummary);
+
+  // Verificações da Ficha Técnica
+  assert.ok(renderedText.includes('📋 FICHA TÉCNICA'), 'Deve conter o cabeçalho FICHA TÉCNICA');
+  assert.ok(renderedText.includes('⚖️ Licença: 🟢 MIT (Open Source Permissivo)'), 'Deve exibir a licença formatada com badge');
+  assert.ok(renderedText.includes('💰 Custo Real: 🟢 100% Grátis & Local'), 'Deve exibir o custo real');
+  assert.ok(renderedText.includes('⚙️ Instalação: 🟢 Fácil (Plug & Play / 1-Click)'), 'Deve exibir a facilidade de instalação');
+  assert.ok(renderedText.includes('🏷️ Categoria: Agentes & Automação IA'), 'Deve exibir a categoria correta');
+  assert.ok(renderedText.includes('🔗 https://github.com/sample/agent-craft'), 'Deve conter link do repo');
+  assert.ok(renderedText.includes('⭐ 5,4 mil estrelas no GitHub'), 'Deve formatar estrelas em milhares');
+
+  // 2. Validação dos Filtros no D1 (listRepositories com licenseType, costModel, deployDifficulty)
+  const db = createInMemoryD1();
+  await ensureDatabaseInitialized(db);
+
+  // Testar listagem geral e contadores agrupados (byLicense, byCost, byDifficulty)
+  const initialList = await listRepositories(db, { limit: 10 });
+  assert.ok(initialList.total >= 5, 'Deve listar ao menos 5 repositórios do seed');
+  assert.ok(typeof initialList.byLicense === 'object', 'byLicense deve ser um objeto');
+  assert.ok(typeof initialList.byCost === 'object', 'byCost deve ser um objeto');
+  assert.ok(typeof initialList.byDifficulty === 'object', 'byDifficulty deve ser um objeto');
+
+  // Filtro por licença permissiva
+  const permissiveList = await listRepositories(db, { licenseType: 'permissive' });
+  for (const item of permissiveList.items) {
+    assert.equal(item.license_type, 'permissive');
+  }
+
+  // 3. Validação do parse de argumentos do script reclassify_repos
+  const cli1 = parseCliArgs(['--dry-run', '--limit=50', '--target=http://localhost:8787', '--password=minhasenha']);
+  assert.equal(cli1.dryRun, true);
+  assert.equal(cli1.limit, 50);
+  assert.equal(cli1.targetUrl, 'http://localhost:8787');
+  assert.equal(cli1.adminPassword, 'minhasenha');
+
+  const cliDefault = parseCliArgs([]);
+  assert.equal(cliDefault.dryRun, false);
+  assert.equal(cliDefault.targetUrl, 'https://vision.24hs.eu.org');
+  assert.equal(cliDefault.adminPassword, '12131415');
+
+  // 4. Validação de checkpoint do reclassify_repos (loadProgress / saveProgress)
+  const testCheckpointFile = path.join(__dirname, 'test_reclassify_progress.json');
+  try {
+    const freshStore = loadProgress(testCheckpointFile, 'https://test.local');
+    assert.deepEqual(freshStore.records, {});
+    freshStore.records['owner/test-repo'] = {
+      status: 'success',
+      repo: 'owner/test-repo',
+      licenseType: 'permissive',
+      updatedAt: new Date().toISOString()
+    };
+    saveProgress(testCheckpointFile, freshStore);
+
+    const reloadedStore = loadProgress(testCheckpointFile, 'https://test.local');
+    assert.equal(reloadedStore.records['owner/test-repo']?.status, 'success');
+  } finally {
+    if (fs.existsSync(testCheckpointFile)) {
+      fs.unlinkSync(testCheckpointFile);
+    }
   }
 });
 

@@ -11,7 +11,9 @@
     "db:migrate:remote": "wrangler d1 migrations apply git_visao_db --remote",
     "test": "node --experimental-strip-types --test tests/worker.test.ts",
     "import:all": "node --experimental-strip-types scripts/import_repos.ts",
-    "import:dry-run": "node --experimental-strip-types scripts/import_repos.ts --dry-run"
+    "import:dry-run": "node --experimental-strip-types scripts/import_repos.ts --dry-run",
+    "reclassify": "node --experimental-strip-types scripts/reclassify_repos.ts",
+    "reclassify:dry-run": "node --experimental-strip-types scripts/reclassify_repos.ts --dry-run"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261024.1",

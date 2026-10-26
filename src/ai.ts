@@ -10,8 +10,67 @@ import {
   TEMPLATE_VARIATIONS,
   buildWhatsAppText,
   detectCategory,
-  detectTemplateType
+  detectTemplateType,
+  type RepoTechnicalInfo
 } from './templates.ts';
+
+function detectLicenseBadge(meta: GitHubRepoMetadata): string {
+  const hay = `${(meta as any).licenseBadge || ''} ${meta.readmeExcerpt || ''} ${meta.description || ''}`.toLowerCase();
+  if (hay.includes('apache')) return 'Apache 2.0 (Livre)';
+  if (hay.includes('mit')) return 'MIT (Livre / Comercial)';
+  if (hay.includes('agpl') || hay.includes('gpl-3') || hay.includes('gpl v3') || hay.includes('gplv3')) return 'AGPL/GPL v3 (Copyleft)';
+  if (hay.includes('gpl')) return 'GPL (Copyleft)';
+  if (hay.includes('bsd')) return 'BSD (Livre)';
+  if (hay.includes('mpl')) return 'MPL 2.0';
+  if (hay.includes('commercial') || hay.includes('proprietary')) return 'Comercial / Source-Available';
+  return 'Open Source';
+}
+
+function detectCostInfo(
+  meta: GitHubRepoMetadata,
+  templateType: TemplateType
+): { costBadge: string; costNotes: string } {
+  const hay = `${meta.readmeExcerpt || ''} ${meta.description || ''}`.toLowerCase();
+  if (hay.includes('freemium') || hay.includes('cloud pricing') || hay.includes('subscription')) {
+    return { costBadge: 'Freemium', costNotes: 'Self-hosted grátis / Nuvem paga' };
+  }
+  switch (templateType) {
+    case 'self-hosted-saas':
+      return { costBadge: '100% Grátis', costNotes: 'Self-hosted livre, adeus mensalidade' };
+    case 'ai-agent-automation':
+      return { costBadge: '100% Grátis', costNotes: 'Open source (chaves LLM próprias)' };
+    case 'infra-gateway':
+      return { costBadge: '100% Grátis', costNotes: 'Hospede na sua infra ou Cloudflare' };
+    case 'dev-lib-cli':
+      return { costBadge: '100% Grátis', costNotes: 'Biblioteca open source' };
+    case 'app-tool':
+    default:
+      return { costBadge: '100% Grátis', costNotes: 'Uso local e ilimitado' };
+  }
+}
+
+function detectDeployInfo(meta: GitHubRepoMetadata): { deployBadge: string; deployMethod: string } {
+  const hay = `${meta.readmeExcerpt || ''} ${meta.description || ''} ${meta.topics.join(' ')}`.toLowerCase();
+  if (hay.includes('docker compose') || hay.includes('docker-compose')) {
+    return { deployBadge: 'Fácil', deployMethod: 'Docker Compose' };
+  }
+  if (hay.includes('docker run') || hay.includes('docker')) {
+    return { deployBadge: 'Fácil', deployMethod: 'Docker' };
+  }
+  if (hay.includes('npx ') || hay.includes('npm install -g') || hay.includes('bunx ')) {
+    return { deployBadge: '1 Comando', deployMethod: 'npx / npm' };
+  }
+  if (hay.includes('pip install') || hay.includes('uv pip') || hay.includes('poetry ')) {
+    return { deployBadge: 'Fácil', deployMethod: 'pip / uv' };
+  }
+  if (hay.includes('cargo install') || hay.includes('cargo run') || hay.includes('binário') || hay.includes('binary')) {
+    return { deployBadge: 'Binário Único', deployMethod: 'Cargo / Binário' };
+  }
+  if (hay.includes('cloudflare') || hay.includes('wrangler deploy')) {
+    return { deployBadge: 'Serverless', deployMethod: 'Cloudflare Workers' };
+  }
+  return { deployBadge: 'Fácil', deployMethod: 'Git Clone / CLI' };
+}
 
 function extractReadmeHighlights(readme: string, meta?: GitHubRepoMetadata): string[] {
   const highlights: string[] = [];
@@ -185,6 +244,16 @@ export function generateFallbackSummary(
   const extractedBullets = extractReadmeHighlights(meta.readmeExcerpt, meta);
   const topicList = meta.topics.length > 0 ? meta.topics.slice(0, 5).join(', ') : meta.language;
 
+  const licenseBadge =
+    meta.licenseBadge || (meta as any).license_badge || detectLicenseBadge(meta);
+  const { costBadge: defaultCostBadge, costNotes: defaultCostNotes } = detectCostInfo(meta, templateType);
+  const costBadge = meta.costBadge || (meta as any).cost_badge || defaultCostBadge;
+  const costNotes = meta.costNotes || (meta as any).cost_notes || defaultCostNotes;
+
+  const { deployBadge: defaultDeployBadge, deployMethod: defaultDeployMethod } = detectDeployInfo(meta);
+  const deployBadge = meta.deployBadge || (meta as any).deploy_badge || defaultDeployBadge;
+  const deployMethod = meta.deployMethod || (meta as any).deploy_method || defaultDeployMethod;
+
   const warningNote =
     /(wip|work in progress|alpha|beta|experimental|em desenvolvimento|não use em produção|not ready for production)/i.test(
       meta.readmeExcerpt
@@ -327,6 +396,16 @@ export function generateFallbackSummary(
   const partialSummary: Omit<GeneratedVisaoSummary, 'whatsappText'> = {
     category,
     templateType,
+    licenseBadge,
+    license_badge: licenseBadge,
+    costBadge,
+    cost_badge: costBadge,
+    costNotes,
+    cost_notes: costNotes,
+    deployBadge,
+    deploy_badge: deployBadge,
+    deployMethod,
+    deploy_method: deployMethod,
     hookTitle: selectFallbackHook(templateType, meta),
     introText: selectFallbackIntro(templateType, meta, shortDesc),
     warningNote,
@@ -407,19 +486,40 @@ export async function generateRepoVisaoSummary(
 Sua missão: analisar minuciosamente os metadados e o README do repositório GitHub fornecido e devolver ESTRITAMENTE um objeto JSON válido (sem blocos markdown \`\`\`json em volta) com a estrutura solicitada.
 
 Existem 5 variações de template ("templateType"):
-1. "ai-agent-automation" -> Para agentes de IA, MCPs, automações inteligentes, navegadores para agentes, frameworks multiagente. Categoria padrão: "Agentes & Automação IA"
-2. "self-hosted-saas" -> Para CRMs, ERPs, sistemas multiatendimento WhatsApp, plataformas open source que substituem SaaS pagos. Categoria padrão: "SaaS & CRM Self-Hosted"
-3. "infra-gateway" -> Para gateways de IA, proxies, Cloudflare Workers, roteadores de tráfego, Docker, DevOps, segurança de chaves. Categoria padrão: "Infra, Gateways & Edge"
-4. "app-tool" -> Para aplicativos desktop/web, clientes visuais, ferramentas locais de produtividade, utilitários prontos. Categoria padrão: "Apps & Produtividade"
-5. "dev-lib-cli" -> Para bibliotecas, frameworks, SDKs, pacotes de código e CLIs para desenvolvedores. Categoria padrão: "Libs, SDKs & CLI Dev"
+1. "ai-agent-automation" -> Para agentes de IA, MCPs, automações inteligentes, navegadores para agentes, frameworks multiagente.
+2. "self-hosted-saas" -> Para CRMs, ERPs, sistemas multiatendimento WhatsApp, plataformas open source que substituem SaaS pagos.
+3. "infra-gateway" -> Para gateways de IA, proxies, Cloudflare Workers, roteadores de tráfego, Docker, DevOps, segurança de chaves.
+4. "app-tool" -> Para aplicativos desktop/web, clientes visuais, ferramentas locais de produtividade, utilitários prontos.
+5. "dev-lib-cli" -> Para bibliotecas, frameworks, SDKs, pacotes de código e CLIs para desenvolvedores.
 
-Categorias válidas ("category"):
-- "Agentes & Automação IA"
-- "SaaS & CRM Self-Hosted"
-- "Infra, Gateways & Edge"
-- "Apps & Produtividade"
-- "Libs, SDKs & CLI Dev"
-- "Outros"
+Existem 9 macro-categorias válidas ("category"):
+1. "Agentes & Automação IA" -> Agentes autônomos, servidores MCP, frameworks multiagente, navegadores com IA, automações orientadas a contexto.
+2. "SaaS & CRM Self-Hosted" -> CRMs, ERPs, sistemas de multiatendimento WhatsApp, plataformas open source que substituem ferramentas com mensalidade por assento.
+3. "Infra, Gateways & Edge" -> Gateways de IA, proxies reversos, Cloudflare Workers, roteadores de tráfego, Docker, DevOps, failover e resiliência de infra.
+4. "Terminal, CLI & DX" -> Utilitários de terminal, TUIs, ferramentas de developer experience (DX), linters, formatters, compiladores e SDKs dev.
+5. "Frontend & UI Components" -> Bibliotecas de componentes UI, design systems, Tailwind/CSS, utilitários visuais, ícones e frameworks web.
+6. "Scrapers & Engenharia de Dados" -> Web scrapers, crawlers, pipelines ETL, automação com Playwright/Puppeteer e extração de dados da web.
+7. "Cibersegurança & Pentest" -> Ferramentas de segurança, auditoria, pentest, scanners de vulnerabilidades, autenticação, criptografia e proteção.
+8. "Apps & Produtividade" -> Aplicativos desktop/web prontos, ferramentas locais de notas/organização, foco e utilitários sem fricção.
+9. "Backend, Bancos & Storage" -> Bancos de dados (SQL/NoSQL/vetoriais), ORMs, engines de storage (S3/MinIO), servidores backend e APIs.
+(E "Outros" apenas como fallback de segurança).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 FICHA TÉCNICA E DADOS REAIS DE DEPLOY / CUSTO / LICENÇA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Você DEVE minerar os metadados e o README para extrair com precisão os 5 campos da FICHA TÉCNICA:
+- "licenseBadge": Identificar a licença real do projeto (ex: "MIT", "Apache 2.0", "AGPL v3", "GPL v3", "BSD", "Open Source", "Verificar").
+- "costBadge": O custo real direto do software (ex: "100% Grátis", "Freemium", "Open Source").
+- "costNotes": Nota curta e objetiva sobre o modelo econômico (ex: "Self-hosted livre, adeus mensalidade", "Exige API key própria", "Sem custo por atendente", "100% local sem nuvem").
+- "deployBadge": Nível de facilidade para colocar no ar (ex: "Fácil", "1 Comando", "Médio", "Docker Pronto", "Zero Setup").
+- "deployMethod": O método real de execução/instalação identificado no README (ex: "Docker Compose", "npx / npm", "pip / uv", "Cargo / Binário", "Cloudflare Worker", "Binário único").
+
+🎯 COMO USAR ESSES METADADOS NA COPY DO WHATSAPP:
+- Na "introText" e no "killerText", use esses fatos para enriquecer a persuasão da mensagem:
+  * LIBERDADE ECONÔMICA: destaque o fim de cobranças absurdas por usuário/assento em dólar e a independência de plataformas fechadas.
+  * SOBERANIA DE DADOS: enfatize que o banco de dados (SQLite/PostgreSQL) roda na própria máquina/VPS do usuário, garantindo privacidade real.
+  * FACILIDADE DE DEPLOY: mencione como é rápido colocar no ar (seja em 1 comando Docker, npm ou binário sem dependências).
+  * AUDITABILIDADE DA LICENÇA: ressalte que o código é aberto e livre de pegadinhas corporativas.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎯 DIRETRIZES DE OURO (SEM MONOTONIA E COM FOCO EM UTILIDADE REAL)
@@ -433,7 +533,6 @@ Categorias válidas ("category"):
 Deve ser SEMPRE em MAIÚSCULAS, iniciando com 1 emoji temático impactante. Escolha o gancho adequado ao nicho do projeto:
 
 * Agentes & Automação IA:
-  Ganchos provocativos sobre autonomia, memória persistente, servidores MCP, visão computacional ou mãos para o agente:
   - "🤖 E SE SEU AGENTE DE IA GANHASSE UM NAVEGADOR SÓ PARA ELE?"
   - "🧠 O QUE ACONTECE QUANDO SEU AGENTE GANHA MEMÓRIA INFINITA?"
   - "🔥 O SERVIDOR MCP QUE FALTAVA NO SEU CURSOR / CLAUDE:"
@@ -441,7 +540,6 @@ Deve ser SEMPRE em MAIÚSCULAS, iniciando com 1 emoji temático impactante. Esco
   - "🎯 PARE DE COPIAR E COLAR: SEU AGENTE AGORA RESOLVE ISSO SOZINHO!"
 
 * SaaS & CRM Self-Hosted:
-  Ganchos sobre independência de plataformas fechadas, adeus custo por atendente/lead em dólar, controle total do WhatsApp e banco próprio:
   - "🏢 CHEGA DE PAGAR MENSALIDADE EM DÓLAR POR ATENDENTE!"
   - "💸 E SE SEU WHATSAPP VIRASSE UM CRM COMPLETO NA SUA VPS?"
   - "🔓 MULTIATENDIMENTO EM EQUIPE SEM PAGAR NENHUM ASSENTO:"
@@ -449,28 +547,43 @@ Deve ser SEMPRE em MAIÚSCULAS, iniciando com 1 emoji temático impactante. Esco
   - "🚀 MONTE SEU PRÓPRIO SISTEMA DE ATENDIMENTO COM ZERO MENSALIDADE:"
 
 * Infra, Gateways & Edge:
-  Ganchos sobre resiliência, não ser acordado de madrugada por serviço fora do ar, segredos vazados, proxies inteligentes, failover, Workers na borda:
   - "🛡️ PARE DE SER ACORDADO DE MADRUGADA POR SERVIÇO FORA DO AR!"
   - "⚡ O GATEWAY QUE SALVA A VIDA DA SUA INFRAESTRUTURA:"
   - "🔒 E SE NENHUMA SENHA OU CHAVE DE API NUNCA MAIS VAZASSE?"
   - "🚦 ROTEAMENTO INTELIGENTE DE TRÁFEGO COM ZERO DOWNTIME:"
   - "🌐 SUBA NA BORDA EM SEGUNDOS: O ESCUDO QUE FALTA NA SUA ARQUITETURA:"
 
+* Terminal, CLI & DX:
+  - "💻 O UTILITÁRIO DE TERMINAL QUE VAI TRANSFORMAR SEU WORKFLOW:"
+  - "⚡ ACELERE SEU FLUXO DE DESENVOLVIMENTO COM O <NOME>:"
+  - "🛠️ CANSADO DE BOILERPLATE? ESSA CLI RESOLVE EM 1 COMANDO!"
+  - "🚀 A FERRAMENTA DE DX QUE TODO DEV DEVERIA CONHECER:"
+
+* Frontend & UI Components:
+  - "🎨 A BIBLIOTECA DE COMPONENTES QUE SUA APLICAÇÃO PRECISAVA:"
+  - "✨ COMPONENTES ACESSÍVEIS E ULTRA-RÁPIDOS COM O <NOME>:"
+  - "🧩 MONTE UMA INTERFACE MODERNA EM POUCOS MINUTOS COM <NOME>:"
+
+* Scrapers & Engenharia de Dados:
+  - "🕷️ EXTRAÇÃO DE DADOS EM ALTA VELOCIDADE E SEM BLOQUEIO:"
+  - "📊 O PIPELINE DE DADOS OPEN SOURCE QUE SUBSTITUI FERRAMENTAS CARAS:"
+  - "⚡ COLETE E ESTRUTURE QUALQUER PÁGINA DA WEB COM O <NOME>:"
+
+* Cibersegurança & Pentest:
+  - "🔒 ENCONTRE VULNERABILIDADES ANTES QUE SEJAM EXPLORADAS:"
+  - "🛡️ O SCANNER DE SEGURANÇA QUE DEVE RODAR NA SUA INFRA HOJE:"
+  - "🕵️ AUDITORIA E PENTEST PROFISSIONAL COM CÓDIGO ABERTO:"
+
 * Apps & Produtividade:
-  Ganchos sobre velocidade instantânea, dados guardados em texto/Git puro, adeus aplicativos pesados em Electron cheios de telemetria:
   - "🖥️ O CLIENTE / APLICATIVO QUE VAI DESTRAVAR SUA PRODUTIVIDADE:"
   - "⚡ ADEUS APLICATIVOS PESADOS E CHEIOS DE TELEMETRIA:"
   - "🎯 RESOLVA ISSO DIRETO NO SEU COMPUTADOR EM SEGUNDOS:"
   - "📝 SUAS NOTAS E TAREFAS 100% SUAS, RÁPIDAS E SEM NUVEM OBRIGATÓRIA!"
-  - "🚀 A FERRAMENTA DESKTOP QUE SUBSTITUI TRÊS APPS LENTOS:"
 
-* Libs, SDKs & CLI Dev:
-  Ganchos sobre menos código boilerplate, tipagem de ponta, performance pura, economia de horas de trabalho dev:
-  - "🛠️ CANSADO DE ESCREVER 50 LINHAS DE CÓDIGO BOILERPLATE?"
-  - "🚀 A BIBLIOTECA QUE VAI TURBINAR SUA STACK EM POUCOS MINUTOS:"
-  - "💻 O PACOTE QUE TODO DEV DEVERIA CONHECER:"
-  - "⚡ EXECUÇÃO EM MILISSEGUNDOS: COMO ESSA LIB DESTRUIU O GARGALO:"
-  - "🧩 TIPAGEM PERFEITA E ZERO DEPENDÊNCIAS PESADAS NO SEU PROJETO:"
+* Backend, Bancos & Storage:
+  - "💾 O BANCO DE DADOS RESILIENTE E RÁPIDO PARA SUA APLICAÇÃO:"
+  - "🗄️ PERSISTÊNCIA E STORAGE SEM REFÉM DE CLOUD PROVIDER:"
+  - "🚀 ORM E ENGINE DE DADOS DE ALTÍSSIMA PERFORMANCE:"
 
 3. MINERAÇÃO DO README POR DETALHES REAIS E CURIOSOS:
 NÃO gere resumos genéricos. O leitor do "Pega a Visão" ama FATOS TÉCNICOS E CURIOSIDADES REAIS extraídos do README:
@@ -491,16 +604,15 @@ Varie o estilo de abertura do primeiro parágrafo:
 
 5. CENÁRIO PRÁTICO REALISTA ("scenarioPrompt"):
 O "scenarioPrompt" NUNCA deve ser algo genérico como 'Executar tarefa'. Deve soar como uma instrução, prompt, comando de terminal ou regra de negócio REAL do dia a dia de quem usa a ferramenta!
-Exemplos realistas:
-- Agentes: "Pesquise os últimos 5 bugs reportados no repositório, identifique as causas raízes e envie um PR corrigindo os testes automaticamente."
-- CRM / Atendimento: "Quando o cliente falar 'preço' ou 'orçamento' no WhatsApp, tagueie como Lead Quente, registre no CRM e transfira para o atendente de plantão."
-- Gateway / Infra: "Adicione monitor para api.meusite.com a cada 20s; se a latência passar de 500ms ou der erro 5xx, ative o failover para o backup e avise no Telegram."
-- App / Ferramenta: "Importe os 300 arquivos de notas em Markdown, organize por tags hierárquicas e gere a visualização em grafo sem enviar nenhum byte para a nuvem."
-- Lib / CLI: "npx repo-cli optimize --input ./assets --quality 80 --output ./dist --watch"
 
 6. REGRAS PARA CADA CHAVE DO JSON:
-- "category": Uma das 5 categorias válidas (ou "Outros").
+- "category": Uma das 9 categorias válidas (ou "Outros").
 - "templateType": Um dos 5 IDs de template válidos.
+- "licenseBadge": Licença identificada (ex: "MIT", "Apache 2.0", "AGPL v3", "Open Source").
+- "costBadge": Resumo do custo (ex: "100% Grátis", "Freemium", "Open Source").
+- "costNotes": Detalhe econômico (ex: "Self-hosted livre, adeus mensalidade").
+- "deployBadge": Nível de facilidade (ex: "Fácil", "1 Comando", "Médio").
+- "deployMethod": Método de execução (ex: "Docker Compose", "npx / npm", "Cargo / Binário").
 - "hookTitle": O gancho temático todo em MAIÚSCULAS com 1 emoji inicial.
 - "introText": Parágrafo introdutório vibrante e variado.
 - "warningNote": String opcional com aviso/limitação real ("⚠️ ...") ou "" se não houver.
@@ -531,7 +643,7 @@ Trecho do README:
 ${meta.readmeExcerpt || 'README não disponível.'}
 
 INSTRUÇÕES EXTRAS DE EXTRAÇÃO:
-- Minere o trecho do README por detalhes técnicos reais: Docker, protocolos suportados (MCP, Prometheus, Webhooks, etc.), limitações práticas (warningNote), benchmarks ou números reais.
+- Minere o trecho do README por detalhes técnicos reais: Licença, Custo real, Método de Deploy (Docker, CLI, etc.), protocolos suportados (MCP, Prometheus, Webhooks), limitações práticas (warningNote), benchmarks ou números reais.
 - Evite frases repetitivas. Não use "E SE VOCÊ..." em tudo. Use o tom exato da categoria selecionada.
 - Garanta que o "scenarioPrompt" seja um comando ou instrução prática real do cotidiano.
 
@@ -539,6 +651,11 @@ Retorne APENAS o JSON válido com as chaves:
 {
   "category": "...",
   "templateType": "...",
+  "licenseBadge": "...",
+  "costBadge": "...",
+  "costNotes": "...",
+  "deployBadge": "...",
+  "deployMethod": "...",
   "hookTitle": "...",
   "introText": "...",
   "warningNote": "",
@@ -602,6 +719,22 @@ Retorne APENAS o JSON válido com as chaves:
       ? (rawCategory as CategoryName)
       : detectCategory(meta, templateType);
 
+    const licenseBadge = parsed.licenseBadge
+      ? String(parsed.licenseBadge).trim()
+      : fallback.licenseBadge;
+    const costBadge = parsed.costBadge
+      ? String(parsed.costBadge).trim()
+      : fallback.costBadge;
+    const costNotes = parsed.costNotes
+      ? String(parsed.costNotes).trim()
+      : fallback.costNotes;
+    const deployBadge = parsed.deployBadge
+      ? String(parsed.deployBadge).trim()
+      : fallback.deployBadge;
+    const deployMethod = parsed.deployMethod
+      ? String(parsed.deployMethod).trim()
+      : fallback.deployMethod;
+
     const features =
       Array.isArray(parsed.features) && parsed.features.length > 0
         ? parsed.features.map((f) => String(f).trim()).filter(Boolean)
@@ -615,6 +748,16 @@ Retorne APENAS o JSON válido com as chaves:
     const partialSummary: Omit<GeneratedVisaoSummary, 'whatsappText'> = {
       category,
       templateType,
+      licenseBadge,
+      license_badge: licenseBadge,
+      costBadge,
+      cost_badge: costBadge,
+      costNotes,
+      cost_notes: costNotes,
+      deployBadge,
+      deploy_badge: deployBadge,
+      deployMethod,
+      deploy_method: deployMethod,
       hookTitle: String(parsed.hookTitle || fallback.hookTitle).trim(),
       introText: String(parsed.introText || fallback.introText).trim(),
       warningNote: parsed.warningNote ? String(parsed.warningNote).trim() : fallback.warningNote || '',

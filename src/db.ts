@@ -1,11 +1,17 @@
 import { SEED_REPOSITORIES } from './seed.ts';
 import type {
+  CostModel,
+  DeployDifficulty,
   Env,
   GeneratedVisaoSummary,
   GitHubRepoMetadata,
+  LicenseType,
   RepoRecord,
+  RepoSearchFilters,
   RuntimeSettings
 } from './types.ts';
+
+export type { RepoSearchFilters };
 
 export interface RepoCursor {
   sort: 'recent' | 'stars' | 'name';
@@ -70,15 +76,6 @@ export function decodeCursor(raw: string | null | undefined): RepoCursor | null 
   return null;
 }
 
-export interface RepoSearchFilters {
-  q?: string;
-  category?: string;
-  templateType?: string;
-  sort?: 'recent' | 'stars' | 'name';
-  limit?: number;
-  cursor?: string;
-}
-
 export interface SerializedRepo
   extends Omit<RepoRecord, 'topics_json' | 'features_json' | 'scenario_steps_json'> {
   topics: string[];
@@ -86,6 +83,26 @@ export interface SerializedRepo
   scenario_steps: string[];
   fullName?: string;
   updatedAt?: string;
+  license_spdx: string;
+  license_type: LicenseType;
+  license_badge: string;
+  is_free: number;
+  cost_model: CostModel;
+  cost_badge: string;
+  cost_notes: string;
+  deploy_difficulty: DeployDifficulty;
+  deploy_badge: string;
+  deploy_method: string;
+  licenseSpdx: string;
+  licenseType: LicenseType;
+  licenseBadge: string;
+  isFree: boolean;
+  costModel: CostModel;
+  costBadge: string;
+  costNotes: string;
+  deployDifficulty: DeployDifficulty;
+  deployBadge: string;
+  deployMethod: string;
 }
 
 export function getKV(env?: Env): KVNamespace | null {
@@ -120,6 +137,17 @@ function safeParseStringArray(raw: string | null | undefined): string[] {
 
 export function serializeRepoRecord(row: RepoRecord): SerializedRepo {
   const { topics_json, features_json, scenario_steps_json, ...rest } = row;
+  const license_spdx = row.license_spdx ?? row.licenseSpdx ?? '';
+  const license_type = (row.license_type || row.licenseType || 'unspecified') as LicenseType;
+  const license_badge = row.license_badge ?? row.licenseBadge ?? '';
+  const is_free = row.is_free !== undefined ? Number(row.is_free) : row.isFree !== undefined ? (row.isFree ? 1 : 0) : 1;
+  const cost_model = (row.cost_model || row.costModel || 'unknown') as CostModel;
+  const cost_badge = row.cost_badge ?? row.costBadge ?? '';
+  const cost_notes = row.cost_notes ?? row.costNotes ?? '';
+  const deploy_difficulty = (row.deploy_difficulty || row.deployDifficulty || 'medium') as DeployDifficulty;
+  const deploy_badge = row.deploy_badge ?? row.deployBadge ?? '';
+  const deploy_method = row.deploy_method ?? row.deployMethod ?? '';
+
   return {
     ...rest,
     fullName: row.full_name,
@@ -128,7 +156,27 @@ export function serializeRepoRecord(row: RepoRecord): SerializedRepo {
     forks: Number(row.forks ?? 0),
     topics: safeParseStringArray(topics_json),
     features: safeParseStringArray(features_json),
-    scenario_steps: safeParseStringArray(scenario_steps_json)
+    scenario_steps: safeParseStringArray(scenario_steps_json),
+    license_spdx,
+    license_type,
+    license_badge,
+    is_free,
+    cost_model,
+    cost_badge,
+    cost_notes,
+    deploy_difficulty,
+    deploy_badge,
+    deploy_method,
+    licenseSpdx: license_spdx,
+    licenseType: license_type,
+    licenseBadge: license_badge,
+    isFree: Boolean(is_free),
+    costModel: cost_model,
+    costBadge: cost_badge,
+    costNotes: cost_notes,
+    deployDifficulty: deploy_difficulty,
+    deployBadge: deploy_badge,
+    deployMethod: deploy_method
   };
 }
 
@@ -162,6 +210,16 @@ CREATE TABLE IF NOT EXISTS repositories (
     summary_text TEXT NOT NULL,
     punchline TEXT NOT NULL,
     whatsapp_text TEXT NOT NULL,
+    license_spdx TEXT DEFAULT '',
+    license_type TEXT DEFAULT 'unspecified',
+    license_badge TEXT DEFAULT '',
+    is_free INTEGER DEFAULT 1,
+    cost_model TEXT DEFAULT 'unknown',
+    cost_badge TEXT DEFAULT '',
+    cost_notes TEXT DEFAULT '',
+    deploy_difficulty TEXT DEFAULT 'medium',
+    deploy_badge TEXT DEFAULT '',
+    deploy_method TEXT DEFAULT '',
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
 )`;
@@ -178,12 +236,37 @@ const CREATE_INDEXES_SQL = [
   'CREATE INDEX IF NOT EXISTS idx_repositories_category ON repositories(category)',
   'CREATE INDEX IF NOT EXISTS idx_repositories_template_type ON repositories(template_type)',
   'CREATE INDEX IF NOT EXISTS idx_repositories_stars ON repositories(stars DESC)',
-  'CREATE INDEX IF NOT EXISTS idx_repositories_created_at ON repositories(created_at DESC)'
+  'CREATE INDEX IF NOT EXISTS idx_repositories_created_at ON repositories(created_at DESC)',
+  'CREATE INDEX IF NOT EXISTS idx_repositories_license_type ON repositories(license_type)',
+  'CREATE INDEX IF NOT EXISTS idx_repositories_cost_model ON repositories(cost_model)',
+  'CREATE INDEX IF NOT EXISTS idx_repositories_deploy_difficulty ON repositories(deploy_difficulty)'
+];
+
+const ADD_COLUMNS_SQL = [
+  "ALTER TABLE repositories ADD COLUMN license_spdx TEXT DEFAULT ''",
+  "ALTER TABLE repositories ADD COLUMN license_type TEXT DEFAULT 'unspecified'",
+  "ALTER TABLE repositories ADD COLUMN license_badge TEXT DEFAULT ''",
+  "ALTER TABLE repositories ADD COLUMN is_free INTEGER DEFAULT 1",
+  "ALTER TABLE repositories ADD COLUMN cost_model TEXT DEFAULT 'unknown'",
+  "ALTER TABLE repositories ADD COLUMN cost_badge TEXT DEFAULT ''",
+  "ALTER TABLE repositories ADD COLUMN cost_notes TEXT DEFAULT ''",
+  "ALTER TABLE repositories ADD COLUMN deploy_difficulty TEXT DEFAULT 'medium'",
+  "ALTER TABLE repositories ADD COLUMN deploy_badge TEXT DEFAULT ''",
+  "ALTER TABLE repositories ADD COLUMN deploy_method TEXT DEFAULT ''"
 ];
 
 export async function ensureDatabaseInitialized(db: D1Database, env?: Env): Promise<void> {
   await db.prepare(CREATE_TABLE_SQL).run();
   await db.prepare(CREATE_SETTINGS_TABLE_SQL).run();
+
+  for (const alterSql of ADD_COLUMNS_SQL) {
+    try {
+      await db.prepare(alterSql).run();
+    } catch {
+      // Tolera erro caso coluna já exista
+    }
+  }
+
   for (const indexSql of CREATE_INDEXES_SQL) {
     await db.prepare(indexSql).run();
   }
@@ -233,8 +316,10 @@ export async function ensureDatabaseInitialized(db: D1Database, env?: Env): Prom
               category, template_type, hook_title, intro_text, warning_note,
               features_json, scenario_title, scenario_intro, scenario_prompt,
               scenario_steps_json, scenario_outro, killer_title, killer_text,
-              summary_text, punchline, whatsapp_text, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              summary_text, punchline, whatsapp_text, created_at, updated_at,
+              license_spdx, license_type, license_badge, is_free, cost_model,
+              cost_badge, cost_notes, deploy_difficulty, deploy_badge, deploy_method
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `;
 
           for (const key of repoKeys) {
@@ -258,6 +343,21 @@ export async function ensureDatabaseInitialized(db: D1Database, env?: Env): Prom
                     : typeof item.scenario_steps_json === 'string'
                       ? item.scenario_steps_json
                       : '[]';
+
+                  const licenseSpdx = item.license_spdx || item.licenseSpdx || '';
+                  const licenseType = item.license_type || item.licenseType || 'unspecified';
+                  const licenseBadge = item.license_badge || item.licenseBadge || '';
+                  const isFree = item.is_free !== undefined
+                    ? Number(item.is_free)
+                    : item.isFree !== undefined
+                      ? (item.isFree ? 1 : 0)
+                      : 1;
+                  const costModel = item.cost_model || item.costModel || 'unknown';
+                  const costBadge = item.cost_badge || item.costBadge || '';
+                  const costNotes = item.cost_notes || item.costNotes || '';
+                  const deployDifficulty = item.deploy_difficulty || item.deployDifficulty || 'medium';
+                  const deployBadge = item.deploy_badge || item.deployBadge || '';
+                  const deployMethod = item.deploy_method || item.deployMethod || '';
 
                   await db
                     .prepare(insertSql)
@@ -290,7 +390,17 @@ export async function ensureDatabaseInitialized(db: D1Database, env?: Env): Prom
                       item.punchline,
                       item.whatsapp_text,
                       item.created_at || new Date().toISOString(),
-                      item.updated_at || new Date().toISOString()
+                      item.updated_at || new Date().toISOString(),
+                      licenseSpdx,
+                      licenseType,
+                      licenseBadge,
+                      isFree,
+                      costModel,
+                      costBadge,
+                      costNotes,
+                      deployDifficulty,
+                      deployBadge,
+                      deployMethod
                     )
                     .run();
                   restoredCount++;
@@ -314,8 +424,10 @@ export async function ensureDatabaseInitialized(db: D1Database, env?: Env): Prom
           category, template_type, hook_title, intro_text, warning_note,
           features_json, scenario_title, scenario_intro, scenario_prompt,
           scenario_steps_json, scenario_outro, killer_title, killer_text,
-          summary_text, punchline, whatsapp_text
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          summary_text, punchline, whatsapp_text,
+          license_spdx, license_type, license_badge, is_free, cost_model,
+          cost_badge, cost_notes, deploy_difficulty, deploy_badge, deploy_method
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const seedKeys: string[] = [];
@@ -352,7 +464,17 @@ export async function ensureDatabaseInitialized(db: D1Database, env?: Env): Prom
             item.killer_text,
             item.summary_text,
             item.punchline,
-            item.whatsapp_text
+            item.whatsapp_text,
+            item.license_spdx || item.licenseSpdx || '',
+            item.license_type || item.licenseType || 'unspecified',
+            item.license_badge || item.licenseBadge || '',
+            item.is_free !== undefined ? Number(item.is_free) : item.isFree !== undefined ? (item.isFree ? 1 : 0) : 1,
+            item.cost_model || item.costModel || 'unknown',
+            item.cost_badge || item.costBadge || '',
+            item.cost_notes || item.costNotes || '',
+            item.deploy_difficulty || item.deployDifficulty || 'medium',
+            item.deploy_badge || item.deployBadge || '',
+            item.deploy_method || item.deployMethod || ''
           )
           .run();
       }
@@ -423,6 +545,9 @@ export async function listRepositories(
   limit: number;
   byCategory: Record<string, number>;
   byTemplate: Record<string, number>;
+  byLicense: Record<string, number>;
+  byCost: Record<string, number>;
+  byDifficulty: Record<string, number>;
 }> {
   const limit = Math.min(Math.max(Number(filters.limit) || 30, 1), 100);
 
@@ -463,6 +588,39 @@ export async function listRepositories(
   ) {
     baseWhereClauses.push('template_type = ?');
     baseParams.push(filters.templateType.trim());
+  }
+
+  if (
+    filters.licenseType &&
+    filters.licenseType.trim() &&
+    filters.licenseType !== 'all' &&
+    filters.licenseType !== 'Todas' &&
+    filters.licenseType !== 'Todos'
+  ) {
+    baseWhereClauses.push('license_type = ?');
+    baseParams.push(filters.licenseType.trim());
+  }
+
+  if (
+    filters.costModel &&
+    filters.costModel.trim() &&
+    filters.costModel !== 'all' &&
+    filters.costModel !== 'Todas' &&
+    filters.costModel !== 'Todos'
+  ) {
+    baseWhereClauses.push('cost_model = ?');
+    baseParams.push(filters.costModel.trim());
+  }
+
+  if (
+    filters.deployDifficulty &&
+    filters.deployDifficulty.trim() &&
+    filters.deployDifficulty !== 'all' &&
+    filters.deployDifficulty !== 'Todas' &&
+    filters.deployDifficulty !== 'Todos'
+  ) {
+    baseWhereClauses.push('deploy_difficulty = ?');
+    baseParams.push(filters.deployDifficulty.trim());
   }
 
   const whereClauses: string[] = [...baseWhereClauses];
@@ -538,11 +696,20 @@ export async function listRepositories(
   }
 
   const allStatsResult = await db
-    .prepare('SELECT category, template_type FROM repositories')
-    .all<{ category: string; template_type: string }>();
+    .prepare('SELECT category, template_type, license_type, cost_model, deploy_difficulty FROM repositories')
+    .all<{
+      category: string;
+      template_type: string;
+      license_type?: string;
+      cost_model?: string;
+      deploy_difficulty?: string;
+    }>();
 
   const byCategory: Record<string, number> = {};
   const byTemplate: Record<string, number> = {};
+  const byLicense: Record<string, number> = {};
+  const byCost: Record<string, number> = {};
+  const byDifficulty: Record<string, number> = {};
 
   for (const r of allStatsResult?.results ?? []) {
     if (r.category) {
@@ -550,6 +717,15 @@ export async function listRepositories(
     }
     if (r.template_type) {
       byTemplate[r.template_type] = (byTemplate[r.template_type] || 0) + 1;
+    }
+    if (r.license_type) {
+      byLicense[r.license_type] = (byLicense[r.license_type] || 0) + 1;
+    }
+    if (r.cost_model) {
+      byCost[r.cost_model] = (byCost[r.cost_model] || 0) + 1;
+    }
+    if (r.deploy_difficulty) {
+      byDifficulty[r.deploy_difficulty] = (byDifficulty[r.deploy_difficulty] || 0) + 1;
     }
   }
 
@@ -573,7 +749,10 @@ export async function listRepositories(
     nextCursor,
     limit,
     byCategory,
-    byTemplate
+    byTemplate,
+    byLicense,
+    byCost,
+    byDifficulty
   };
 }
 
@@ -588,6 +767,25 @@ export async function upsertRepository(
   const featuresJson = JSON.stringify(summary.features ?? []);
   const scenarioStepsJson = JSON.stringify(summary.scenarioSteps ?? []);
 
+  const licenseSpdx = summary.licenseSpdx || meta.licenseSpdx || summary.license_spdx || meta.license_spdx || '';
+  const licenseType = summary.licenseType || meta.licenseType || summary.license_type || meta.license_type || 'unspecified';
+  const licenseBadge = summary.licenseBadge || meta.licenseBadge || summary.license_badge || meta.license_badge || '';
+  const isFree = summary.isFree !== undefined
+    ? (summary.isFree ? 1 : 0)
+    : summary.is_free !== undefined
+      ? Number(summary.is_free)
+      : meta.isFree !== undefined
+        ? (meta.isFree ? 1 : 0)
+        : meta.is_free !== undefined
+          ? Number(meta.is_free)
+          : 1;
+  const costModel = summary.costModel || meta.costModel || summary.cost_model || meta.cost_model || 'unknown';
+  const costBadge = summary.costBadge || meta.costBadge || summary.cost_badge || meta.cost_badge || '';
+  const costNotes = summary.costNotes || meta.costNotes || summary.cost_notes || meta.cost_notes || '';
+  const deployDifficulty = summary.deployDifficulty || meta.deployDifficulty || summary.deploy_difficulty || meta.deploy_difficulty || 'medium';
+  const deployBadge = summary.deployBadge || meta.deployBadge || summary.deploy_badge || meta.deploy_badge || '';
+  const deployMethod = summary.deployMethod || meta.deployMethod || summary.deploy_method || meta.deploy_method || '';
+
   const sql = `
     INSERT INTO repositories (
       repo_key, full_name, owner, name, repo_url, description,
@@ -595,8 +793,21 @@ export async function upsertRepository(
       category, template_type, hook_title, intro_text, warning_note,
       features_json, scenario_title, scenario_intro, scenario_prompt,
       scenario_steps_json, scenario_outro, killer_title, killer_text,
-      summary_text, punchline, whatsapp_text, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      summary_text, punchline, whatsapp_text,
+      license_spdx, license_type, license_badge, is_free, cost_model,
+      cost_badge, cost_notes, deploy_difficulty, deploy_badge, deploy_method,
+      updated_at
+    ) VALUES (
+      ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?,
+      ?, ?, ?, ?,
+      ?, ?, ?, ?,
+      ?, ?, ?,
+      ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?,
+      datetime('now')
+    )
     ON CONFLICT(repo_key) DO UPDATE SET
       full_name = excluded.full_name,
       owner = excluded.owner,
@@ -624,6 +835,16 @@ export async function upsertRepository(
       summary_text = excluded.summary_text,
       punchline = excluded.punchline,
       whatsapp_text = excluded.whatsapp_text,
+      license_spdx = excluded.license_spdx,
+      license_type = excluded.license_type,
+      license_badge = excluded.license_badge,
+      is_free = excluded.is_free,
+      cost_model = excluded.cost_model,
+      cost_badge = excluded.cost_badge,
+      cost_notes = excluded.cost_notes,
+      deploy_difficulty = excluded.deploy_difficulty,
+      deploy_badge = excluded.deploy_badge,
+      deploy_method = excluded.deploy_method,
       updated_at = datetime('now')
   `;
 
@@ -656,7 +877,17 @@ export async function upsertRepository(
       summary.killerText,
       summary.summaryText,
       summary.punchline,
-      summary.whatsappText
+      summary.whatsappText,
+      licenseSpdx,
+      licenseType,
+      licenseBadge,
+      isFree,
+      costModel,
+      costBadge,
+      costNotes,
+      deployDifficulty,
+      deployBadge,
+      deployMethod
     )
     .run();
 

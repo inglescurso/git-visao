@@ -1,5 +1,30 @@
 import type { CategoryName, GeneratedVisaoSummary, GitHubRepoMetadata, TemplateType } from './types.ts';
 
+export interface RepoTechnicalInfo {
+  licenseBadge?: string;
+  license_badge?: string;
+  costBadge?: string;
+  cost_badge?: string;
+  costNotes?: string;
+  cost_notes?: string;
+  deployBadge?: string;
+  deploy_badge?: string;
+  deployMethod?: string;
+  deploy_method?: string;
+}
+
+export type ExpandedCategoryName =
+  | 'Agentes & Automação IA'
+  | 'SaaS & CRM Self-Hosted'
+  | 'Infra, Gateways & Edge'
+  | 'Terminal, CLI & DX'
+  | 'Frontend & UI Components'
+  | 'Scrapers & Engenharia de Dados'
+  | 'Cibersegurança & Pentest'
+  | 'Apps & Produtividade'
+  | 'Backend, Bancos & Storage'
+  | 'Outros';
+
 export interface TemplateMetadata {
   id: TemplateType;
   label: string;
@@ -18,7 +43,7 @@ export const TEMPLATE_VARIATIONS: Record<TemplateType, TemplateMetadata> = {
     id: 'ai-agent-automation',
     label: '1. Agentes & Automações de IA',
     badgeEmoji: '🤖',
-    defaultCategory: 'Agentes & Automação IA',
+    defaultCategory: 'Agentes & Automação IA' as CategoryName,
     featureLeadIn: '🤖 O que seu agente passa a fazer por você:',
     scenarioHeader: '🧠 PENSE ASSIM (COMO VOCÊ PEDE AO AGENTE):',
     stepsLeadIn: 'E o agente executa na prática:',
@@ -30,7 +55,7 @@ export const TEMPLATE_VARIATIONS: Record<TemplateType, TemplateMetadata> = {
     id: 'self-hosted-saas',
     label: '2. Sistema Self-Hosted / SaaS Open Source',
     badgeEmoji: '🏢',
-    defaultCategory: 'SaaS & CRM Self-Hosted',
+    defaultCategory: 'SaaS & CRM Self-Hosted' as CategoryName,
     featureLeadIn: '🏢 O que ele entrega pronto pra sua operação:',
     scenarioHeader: '💰 PENSE NA ECONOMIA (E NA LIBERDADE):',
     stepsLeadIn: 'E o sistema orquestra sozinho:',
@@ -42,7 +67,7 @@ export const TEMPLATE_VARIATIONS: Record<TemplateType, TemplateMetadata> = {
     id: 'infra-gateway',
     label: '3. Infraestrutura / Gateway / DevOps',
     badgeEmoji: '🔀',
-    defaultCategory: 'Infra, Gateways & Edge',
+    defaultCategory: 'Infra, Gateways & Edge' as CategoryName,
     featureLeadIn: '🛡️ O que ele segura nos bastidores da sua stack:',
     scenarioHeader: '⚙️ CENÁRIO REAL DE PRODUÇÃO:',
     stepsLeadIn: 'E a infraestrutura responde no milissegundo:',
@@ -54,7 +79,7 @@ export const TEMPLATE_VARIATIONS: Record<TemplateType, TemplateMetadata> = {
     id: 'app-tool',
     label: '4. App / Ferramenta Pronta (Desktop/Web)',
     badgeEmoji: '🖥️',
-    defaultCategory: 'Apps & Produtividade',
+    defaultCategory: 'Apps & Produtividade' as CategoryName,
     featureLeadIn: '⚡ O que ele resolve no seu dia a dia com zero atrito:',
     scenarioHeader: '🎯 VEJA A PRATICIDADE NO USO REAL:',
     stepsLeadIn: 'E o aplicativo resolve em poucos cliques:',
@@ -66,7 +91,7 @@ export const TEMPLATE_VARIATIONS: Record<TemplateType, TemplateMetadata> = {
     id: 'dev-lib-cli',
     label: '5. Biblioteca / SDK / CLI para Devs',
     badgeEmoji: '🛠️',
-    defaultCategory: 'Libs, SDKs & CLI Dev',
+    defaultCategory: 'Terminal, CLI & DX' as CategoryName,
     featureLeadIn: '🛠️ Superpoderes que ele injeta no seu código:',
     scenarioHeader: '💻 COMO FICA O CÓDIGO NO SEU PROJETO:',
     stepsLeadIn: 'E a biblioteca entrega de bandeja:',
@@ -80,8 +105,12 @@ export const CATEGORIES: CategoryName[] = [
   'Agentes & Automação IA',
   'SaaS & CRM Self-Hosted',
   'Infra, Gateways & Edge',
+  'Terminal, CLI & DX',
+  'Frontend & UI Components',
+  'Scrapers & Engenharia de Dados',
+  'Cibersegurança & Pentest',
   'Apps & Produtividade',
-  'Libs, SDKs & CLI Dev',
+  'Backend, Bancos & Storage',
   'Outros'
 ];
 
@@ -127,21 +156,153 @@ export function detectTemplateType(meta: GitHubRepoMetadata): TemplateType {
 }
 
 export function detectCategory(meta: GitHubRepoMetadata, templateType?: TemplateType): CategoryName {
-  const resolvedTemplate = templateType || detectTemplateType(meta);
-  const tpl = TEMPLATE_VARIATIONS[resolvedTemplate];
-  if (tpl && tpl.defaultCategory) {
-    return tpl.defaultCategory;
+  const topicsLower = (meta.topics || []).map((t) => t.toLowerCase());
+  const topicsText = topicsLower.join(' ');
+  const desc = (meta.description || '').toLowerCase();
+  const name = `${meta.fullName} ${meta.name}`.toLowerCase();
+  const lang = (meta.language || '').toLowerCase();
+  const readmeSnippet = (meta.readmeExcerpt || '').slice(0, 1200).toLowerCase();
+
+  const hay = `${name} ${desc} ${topicsText} ${readmeSnippet} ${lang}`;
+
+  const hasTopic = (...words: string[]) =>
+    words.some((w) => topicsLower.includes(w.toLowerCase()));
+
+  // 1. Cibersegurança & Pentest
+  if (
+    hasTopic('pentest', 'penetration-testing', 'cybersecurity', 'security', 'vulnerability', 'cve', 'exploit', 'red-team', 'blue-team', 'infosec', 'hacking', 'malware', 'scanner', 'fuzzing') ||
+    /(ciberseguran|pentest|penetration test|vulnerabil|cve-|exploit|red team|blue team|infosec|security scanner|fuzzer|fuzzing|reconnaissance|privilege-escalation)/.test(hay)
+  ) {
+    return 'Cibersegurança & Pentest' as CategoryName;
   }
-  return 'Outros';
+
+  // 2. Agentes & Automação IA
+  if (
+    hasTopic('agent', 'agents', 'ai-agent', 'mcp', 'mcp-server', 'model-context-protocol', 'llm-agent', 'crewai', 'autogen', 'langchain', 'langgraph', 'browser-use', 'autonomous-agent', 'agentic') ||
+    /(mcp server|model context protocol|autonomous agent|ai agent|multi-agent|agente autônomo|agente de ia|agentes autônomos|browser-use|crewai|autogen|langgraph)/.test(hay)
+  ) {
+    return 'Agentes & Automação IA' as CategoryName;
+  }
+
+  // 3. Scrapers & Engenharia de Dados
+  if (
+    hasTopic('scraper', 'scraping', 'web-scraping', 'crawler', 'crawling', 'spider', 'etl', 'data-pipeline', 'data-engineering', 'data-scraping', 'playwright', 'puppeteer', 'beautifulsoup') ||
+    /(web scraper|web scraping|data scraper|crawler|crawling|spider|etl pipeline|data engineering|extrator de dados|raspagem|coleta de dados|ingestão de dados)/.test(hay)
+  ) {
+    return 'Scrapers & Engenharia de Dados' as CategoryName;
+  }
+
+  // 4. SaaS & CRM Self-Hosted
+  if (
+    hasTopic('crm', 'erp', 'wacrm', 'self-hosted', 'selfhosted', 'chatwoot', 'helpdesk', 'ticketing', 'multiatendimento', 'invoice', 'billing') ||
+    /(self-hosted|selfhosted|crm|erp|multiatendimento|atendimento whatsapp|helpdesk|sistema de tickets|faturamento|financeiro|painel de atendimento|hospedagem própria)/.test(hay)
+  ) {
+    return 'SaaS & CRM Self-Hosted' as CategoryName;
+  }
+
+  // 5. Infra, Gateways & Edge
+  if (
+    hasTopic('gateway', 'api-gateway', 'proxy', 'reverse-proxy', 'cloudflare-workers', 'cloudflare', 'edge', 'load-balancer', 'failover', 'docker', 'kubernetes', 'k8s', 'traefik', 'caddy', 'nginx', 'devops', 'vpn', 'tunnel') ||
+    /(api gateway|reverse proxy|load balancer|failover|roteamento de tráfego|cloudflare worker|edge computing|infraestrutura|servidor proxy|tunneling|traefik|envoy)/.test(hay)
+  ) {
+    return 'Infra, Gateways & Edge' as CategoryName;
+  }
+
+  // 6. Frontend & UI Components
+  if (
+    hasTopic('ui', 'frontend', 'components', 'react', 'vue', 'svelte', 'tailwind', 'css', 'design-system', 'shadcn', 'radix', 'lucide', 'icons', 'web-components') ||
+    /(ui library|component library|design system|componentes react|biblioteca de componentes|tailwind components|shadcn|radix ui|frontend framework|ícones)/.test(hay)
+  ) {
+    return 'Frontend & UI Components' as CategoryName;
+  }
+
+  // 7. Backend, Bancos & Storage
+  if (
+    hasTopic('database', 'sql', 'nosql', 'postgres', 'postgresql', 'sqlite', 'mysql', 'redis', 'mongodb', 'orm', 'prisma', 'drizzle', 'storage', 's3', 'minio', 'vector-database', 'vector-db', 'weaviate', 'qdrant', 'chroma') ||
+    /(database|banco de dados|vetorial|vector db|postgres|sqlite|mysql|redis|orm|prisma|drizzle|object storage|s3-compatible|minio|backend framework)/.test(hay)
+  ) {
+    return 'Backend, Bancos & Storage' as CategoryName;
+  }
+
+  // 8. Terminal, CLI & DX
+  if (
+    hasTopic('cli', 'tui', 'terminal', 'command-line', 'console', 'developer-experience', 'dx', 'sdk', 'library', 'compiler', 'linter', 'formatter', 'bundler', 'package', 'npm-package') ||
+    /(command-line|terminal tool|tui|developer experience|dx tool|utilitário de terminal|linha de comando|sdk|biblioteca|compilador|linter|bundler)/.test(hay)
+  ) {
+    return 'Terminal, CLI & DX' as CategoryName;
+  }
+
+  // 9. Apps & Produtividade
+  if (
+    hasTopic('app', 'desktop-app', 'productivity', 'electron', 'tauri', 'notes', 'markdown', 'obsidian', 'notion', 'task-manager', 'todo') ||
+    /(desktop app|aplicativo desktop|produtividade|productivity tool|bloco de notas|markdown editor|gerenciador de tarefas|ferramenta local|aplicativo)/.test(hay)
+  ) {
+    return 'Apps & Produtividade' as CategoryName;
+  }
+
+  // Se não caiu nas regras específicas acima, usa o templateType como fallback
+  if (templateType && TEMPLATE_VARIATIONS[templateType]?.defaultCategory) {
+    return TEMPLATE_VARIATIONS[templateType].defaultCategory;
+  }
+
+  const detectedTpl = detectTemplateType(meta);
+  if (TEMPLATE_VARIATIONS[detectedTpl]?.defaultCategory) {
+    return TEMPLATE_VARIATIONS[detectedTpl].defaultCategory;
+  }
+
+  return 'Outros' as CategoryName;
 }
 
 export function buildWhatsAppText(
-  meta: GitHubRepoMetadata,
-  summary: Omit<GeneratedVisaoSummary, 'whatsappText'>
+  meta: GitHubRepoMetadata & RepoTechnicalInfo,
+  summary: Omit<GeneratedVisaoSummary, 'whatsappText'> & RepoTechnicalInfo
 ): string {
   const tpl = TEMPLATE_VARIATIONS[summary.templateType] || TEMPLATE_VARIATIONS['app-tool'];
   const starsText = formatStarsPtBr(meta.stars);
   const commitDate = formatDatePtBr(meta.lastCommitAt);
+
+  const license =
+    meta.licenseBadge ||
+    meta.license_badge ||
+    summary.licenseBadge ||
+    summary.license_badge ||
+    'Verificar';
+
+  const costBadge =
+    meta.costBadge ||
+    meta.cost_badge ||
+    summary.costBadge ||
+    summary.cost_badge ||
+    '100% Grátis';
+
+  const costNotes =
+    meta.costNotes ||
+    meta.cost_notes ||
+    summary.costNotes ||
+    summary.cost_notes ||
+    '';
+
+  const costLine = costNotes
+    ? `💰 Custo Real: ${costBadge} (${costNotes})`
+    : `💰 Custo Real: ${costBadge}`;
+
+  const deployBadge =
+    meta.deployBadge ||
+    meta.deploy_badge ||
+    summary.deployBadge ||
+    summary.deploy_badge ||
+    'Fácil';
+
+  const deployMethod =
+    meta.deployMethod ||
+    meta.deploy_method ||
+    summary.deployMethod ||
+    summary.deploy_method ||
+    '';
+
+  const deployLine = deployMethod
+    ? `⚙️ Instalação: ${deployBadge} (${deployMethod})`
+    : `⚙️ Instalação: ${deployBadge}`;
 
   const lines: string[] = [];
   lines.push(summary.hookTitle.trim());
@@ -151,6 +312,14 @@ export function buildWhatsAppText(
   lines.push(`🔗 ${meta.repoUrl}`);
   lines.push(`⭐ ${starsText} estrelas no GitHub`);
   lines.push(`🕒 Último commit em ${commitDate}`);
+  lines.push('');
+  lines.push('━━━━━━━━━━━━━━━━━━');
+  lines.push('📋 FICHA TÉCNICA');
+  lines.push(`⚖️ Licença: ${license}`);
+  lines.push(costLine);
+  lines.push(deployLine);
+  lines.push(`🏷️ Categoria: ${summary.category}`);
+  lines.push('━━━━━━━━━━━━━━━━━━');
   lines.push('');
 
   if (summary.warningNote && summary.warningNote.trim()) {

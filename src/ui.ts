@@ -218,6 +218,7 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
               </span>
               <span id="exists-repo-name" class="font-mono text-sm font-bold text-white"></span>
               <span id="exists-repo-template" class="text-xs px-2 py-0.5 rounded bg-white/10 text-slate-300 font-mono"></span>
+              <span id="exists-repo-badges" class="flex flex-wrap items-center gap-1.5"></span>
             </div>
             <p id="exists-repo-hook" class="text-sm font-semibold text-emerald-200 pt-1"></p>
             <p id="exists-repo-intro" class="text-xs text-slate-300 line-clamp-2"></p>
@@ -310,10 +311,10 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
       </div>
     </section>
 
-    <!-- Barra de Busca, Categorias e Filtros -->
-    <section class="space-y-4">
-      <div class="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
-        <!-- Input de busca instantânea -->
+    <!-- Barra de Busca, Categorias e Filtros Especializados -->
+    <section class="space-y-3.5">
+      <!-- Linha 1: Input de Busca + Ordenação + Botão Limpar -->
+      <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
         <div class="relative flex-1">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
             🔍
@@ -326,12 +327,79 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
           />
         </div>
 
-        <!-- Seletores de Variação de Template e Ordenação -->
-        <div class="flex flex-col sm:flex-row gap-2.5">
+        <div class="flex items-center gap-2 shrink-0">
+          <select
+            id="sort-select"
+            aria-label="Ordenar repositórios"
+            class="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-white/10 text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-sky-400 cursor-pointer"
+          >
+            <option value="recent">🕒 Mais Recentes</option>
+            <option value="stars">⭐ Mais Estrelas ⭐</option>
+            <option value="alpha">🔤 Ordem Alfabética A-Z</option>
+          </select>
+          <button
+            id="clear-filters-btn"
+            type="button"
+            class="hidden px-3.5 py-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-semibold transition cursor-pointer whitespace-nowrap"
+            title="Limpar todos os filtros ativos"
+          >
+            ✕ Limpar Filtros
+          </button>
+        </div>
+      </div>
+
+      <!-- Linha 2: Barra de Filtros (Licença, Custo Real, Dificuldade de Instalação, Template) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <!-- Filtro por Licença -->
+        <div class="relative">
+          <select
+            id="filter-license-select"
+            aria-label="Filtrar por licença"
+            class="w-full px-3 py-2.5 rounded-xl bg-slate-900/90 border border-white/10 text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-sky-400 cursor-pointer"
+          >
+            <option value="">📜 Todas as Licenças</option>
+            <option value="permissive">🟢 Permissiva (MIT, Apache)</option>
+            <option value="copyleft">🟡 Copyleft (AGPL, GPL)</option>
+            <option value="source-available">🔴 Source-Available</option>
+            <option value="unlicensed">⚪ Sem Licença</option>
+          </select>
+        </div>
+
+        <!-- Filtro por Custo Real -->
+        <div class="relative">
+          <select
+            id="filter-cost-select"
+            aria-label="Filtrar por custo real"
+            class="w-full px-3 py-2.5 rounded-xl bg-slate-900/90 border border-white/10 text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-sky-400 cursor-pointer"
+          >
+            <option value="">💰 Todos os Custos</option>
+            <option value="free-local">🟢 100% Grátis &amp; Local</option>
+            <option value="byok-ai">🟡 Grátis (BYOK Chaves IA)</option>
+            <option value="freemium">🟠 Freemium / Open Core</option>
+            <option value="paid-infra">🔴 Custos de Servidor/APIs</option>
+          </select>
+        </div>
+
+        <!-- Filtro por Dificuldade de Instalação -->
+        <div class="relative">
+          <select
+            id="filter-deploy-select"
+            aria-label="Filtrar por dificuldade de instalação"
+            class="w-full px-3 py-2.5 rounded-xl bg-slate-900/90 border border-white/10 text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-sky-400 cursor-pointer"
+          >
+            <option value="">⚡ Todas as Instalações</option>
+            <option value="easy">🟢 Fácil (Plug &amp; Play)</option>
+            <option value="medium">🟡 Médio (Docker / .env)</option>
+            <option value="advanced">🔴 Avançado (K8s / Compilação)</option>
+          </select>
+        </div>
+
+        <!-- Filtro por Template -->
+        <div class="relative">
           <select
             id="filter-template-select"
             aria-label="Filtrar por variação de template"
-            class="px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-white/10 text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-sky-400"
+            class="w-full px-3 py-2.5 rounded-xl bg-slate-900/90 border border-white/10 text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-sky-400 cursor-pointer"
           >
             <option value="">🎨 Todos os 5 Templates</option>
             <option value="ai-agent-automation">🤖 Agente IA &amp; Automação</option>
@@ -340,21 +408,11 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
             <option value="app-tool">💻 App &amp; Ferramenta Prática</option>
             <option value="dev-lib-cli">🛠️ Lib, SDK &amp; CLI Dev</option>
           </select>
-
-          <select
-            id="sort-select"
-            aria-label="Ordenar repositórios"
-            class="px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-white/10 text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-sky-400"
-          >
-            <option value="recent">🕒 Mais Recentes</option>
-            <option value="stars">⭐ Mais Estrelas ⭐</option>
-            <option value="alpha">🔤 Ordem Alfabética A-Z</option>
-          </select>
         </div>
       </div>
 
-      <!-- Pílulas de Categoria -->
-      <div id="category-pills" class="flex items-center gap-2 overflow-x-auto pb-1">
+      <!-- Linha 3: Pílulas das 9 Macro-Categorias (Scroll horizontal suave) -->
+      <div id="category-pills" class="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5">
         <!-- Renderizado via JS com contadores -->
       </div>
     </section>
@@ -427,6 +485,33 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
             <span id="modal-stars" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-white/10"></span>
             <span id="modal-commit" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-white/10"></span>
             <span id="modal-language" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-white/10"></span>
+          </div>
+
+          <!-- Quadro da Ficha Técnica (4 Itens: Licença, Custo Real, Instalação, Categoria) -->
+          <div class="p-4 rounded-xl bg-slate-900/90 border border-sky-500/25 space-y-3 shadow-lg">
+            <div class="flex items-center justify-between border-b border-white/10 pb-2">
+              <span class="text-xs font-mono font-bold uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
+                📋 FICHA TÉCNICA DO REPOSITÓRIO
+              </span>
+              <span id="modal-ft-category" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30"></span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+              <div class="p-2.5 rounded-lg bg-slate-950/70 border border-white/5 space-y-1">
+                <span class="text-[10px] font-mono uppercase text-slate-400 block font-semibold">📜 Licença</span>
+                <span id="modal-ft-license" class="font-bold text-slate-100 block"></span>
+                <span id="modal-ft-license-type" class="text-[11px] text-slate-400 font-mono block"></span>
+              </div>
+              <div class="p-2.5 rounded-lg bg-slate-950/70 border border-white/5 space-y-1">
+                <span class="text-[10px] font-mono uppercase text-slate-400 block font-semibold">💰 Custo Real</span>
+                <span id="modal-ft-cost" class="font-bold text-slate-100 block"></span>
+                <span id="modal-ft-cost-notes" class="text-[11px] text-slate-300 block leading-relaxed"></span>
+              </div>
+              <div class="p-2.5 rounded-lg bg-slate-950/70 border border-white/5 space-y-1">
+                <span class="text-[10px] font-mono uppercase text-slate-400 block font-semibold">⚡ Instalação</span>
+                <span id="modal-ft-deploy" class="font-bold text-slate-100 block"></span>
+                <span id="modal-ft-deploy-method" class="text-[11px] text-slate-300 font-mono block"></span>
+              </div>
+            </div>
           </div>
 
           <div>
@@ -634,10 +719,28 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
       'Agentes & Automação IA',
       'SaaS & CRM Self-Hosted',
       'Infra, Gateways & Edge',
+      'Terminal, CLI & DX',
+      'Frontend & UI Components',
+      'Scrapers & Engenharia de Dados',
+      'Cibersegurança & Pentest',
       'Apps & Produtividade',
-      'Libs, SDKs & CLI Dev',
+      'Backend, Bancos & Storage',
       'Outros'
     ];
+
+    const CATEGORY_ICONS = {
+      'Agentes & Automação IA': '🤖',
+      'SaaS & CRM Self-Hosted': '🏢',
+      'Infra, Gateways & Edge': '⚡',
+      'Terminal, CLI & DX': '💻',
+      'Frontend & UI Components': '🎨',
+      'Scrapers & Engenharia de Dados': '🕷️',
+      'Cibersegurança & Pentest': '🛡️',
+      'Apps & Produtividade': '📱',
+      'Backend, Bancos & Storage': '🗄️',
+      'Libs, SDKs & CLI Dev': '🛠️',
+      'Outros': '📦'
+    };
 
     const TEMPLATE_LABELS = {
       'ai-agent-automation': '🤖 Agente IA & Automação',
@@ -657,6 +760,9 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
     let isLoading = false;
     let activeCategory = '';
     let activeTemplate = '';
+    let activeLicense = '';
+    let activeCost = '';
+    let activeDeploy = '';
     let activeSort = 'recent';
     let searchQuery = '';
     let currentCheckedRepo = null;
@@ -705,6 +811,111 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
       return day + '/' + month + '/' + year;
     }
 
+    function getLicenseBadgeText(r) {
+      if (r.licenseBadge && r.licenseBadge.trim()) return r.licenseBadge;
+      const spdx = r.licenseSpdx || '';
+      if (spdx) {
+        if (r.licenseType === 'copyleft') return '🟡 ' + spdx;
+        if (r.licenseType === 'source-available') return '🔴 ' + spdx;
+        if (r.licenseType === 'unlicensed') return '⚪ Sem Licença';
+        return '🟢 ' + spdx;
+      }
+      if (r.licenseType === 'copyleft') return '🟡 Copyleft';
+      if (r.licenseType === 'source-available') return '🔴 Source-Available';
+      if (r.licenseType === 'unlicensed') return '⚪ Sem Licença';
+      return '🟢 Open Source';
+    }
+
+    function getLicenseTypeText(r) {
+      const map = {
+        'permissive': 'Permissiva (MIT / Apache)',
+        'copyleft': 'Copyleft (AGPL / GPL)',
+        'source-available': 'Source-Available (BSL / SSPL)',
+        'unlicensed': 'Sem Licença Explícita',
+        'unspecified': 'Verificar no Repositório'
+      };
+      return map[r.licenseType] || 'Open Source';
+    }
+
+    function getCostBadgeText(r) {
+      if (r.costBadge && r.costBadge.trim()) return r.costBadge;
+      const map = {
+        'free-local': '🟢 100% Grátis & Local',
+        'byok-ai': '🟡 Grátis (BYOK Chaves IA)',
+        'freemium': '🟠 Freemium / Open Core',
+        'paid-infra': '🔴 Custos Servidor/APIs'
+      };
+      return map[r.costModel] || '🟢 100% Grátis & Local';
+    }
+
+    function getCostDefaultNotes(r) {
+      if (r.costNotes && r.costNotes.trim()) return r.costNotes;
+      const map = {
+        'free-local': 'Roda 100% em hardware local sem custos de token de API.',
+        'byok-ai': 'Software gratuito, exige chaves próprias de API (BYOK - OpenAI/Gemini/Anthropic).',
+        'freemium': 'Recursos essenciais abertos; recursos corporativos ou nuvem gerenciada pagos.',
+        'paid-infra': 'Exige infraestrutura dedicada de servidor, banco em nuvem ou APIs pagas.'
+      };
+      return map[r.costModel] || 'Uso aberto e gratuito sem taxas escondidas.';
+    }
+
+    function getDeployBadgeText(r) {
+      if (r.deployBadge && r.deployBadge.trim()) return r.deployBadge;
+      const map = {
+        'easy': '🟢 Fácil (Plug & Play)',
+        'medium': '🟡 Médio (Docker / .env)',
+        'advanced': '🔴 Avançado (K8s / Compilação)'
+      };
+      return map[r.deployDifficulty] || '🟡 Médio (Docker / .env)';
+    }
+
+    function getDeployDefaultMethod(r) {
+      if (r.deployMethod && r.deployMethod.trim()) return 'Método: ' + r.deployMethod;
+      const map = {
+        'easy': 'Método: Executável GUI / npx / pip rápido',
+        'medium': 'Método: Docker Compose ou Node/Python .env',
+        'advanced': 'Método: Compilação de código ou Cluster K8s'
+      };
+      return map[r.deployDifficulty] || 'Método: Docker / CLI';
+    }
+
+    function matchesClientFilters(r) {
+      if (activeLicense) {
+        const lt = (r.licenseType || '').toLowerCase();
+        if (activeLicense === 'permissive' && lt !== 'permissive') return false;
+        if (activeLicense === 'copyleft' && lt !== 'copyleft') return false;
+        if (activeLicense === 'source-available' && lt !== 'source-available') return false;
+        if (activeLicense === 'unlicensed' && lt !== 'unlicensed' && lt !== 'unspecified' && r.licenseSpdx) return false;
+      }
+      if (activeCost) {
+        const cm = (r.costModel || '').toLowerCase();
+        if (activeCost !== cm) return false;
+      }
+      if (activeDeploy) {
+        const dd = (r.deployDifficulty || '').toLowerCase();
+        if (activeDeploy !== dd) return false;
+      }
+      return true;
+    }
+
+    function updateClearFiltersButton() {
+      const btn = document.getElementById('clear-filters-btn');
+      if (!btn) return;
+      const hasActive = Boolean(
+        activeCategory ||
+        activeTemplate ||
+        activeLicense ||
+        activeCost ||
+        activeDeploy ||
+        searchQuery.trim()
+      );
+      if (hasActive) {
+        btn.classList.remove('hidden');
+      } else {
+        btn.classList.add('hidden');
+      }
+    }
+
     function normalizeRepo(raw) {
       if (!raw) return null;
       return {
@@ -722,6 +933,16 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
         lastCommitAt: raw.last_commit_at || raw.lastCommitAt || '',
         category: raw.category || 'Outros',
         templateType: raw.template_type || raw.templateType || 'app-tool',
+        licenseSpdx: raw.license_spdx || raw.licenseSpdx || '',
+        licenseType: raw.license_type || raw.licenseType || 'unspecified',
+        licenseBadge: raw.license_badge || raw.licenseBadge || '',
+        isFree: raw.is_free !== undefined ? Number(raw.is_free) : (raw.isFree !== undefined ? Number(raw.isFree) : 1),
+        costModel: raw.cost_model || raw.costModel || 'free-local',
+        costBadge: raw.cost_badge || raw.costBadge || '',
+        costNotes: raw.cost_notes || raw.costNotes || '',
+        deployDifficulty: raw.deploy_difficulty || raw.deployDifficulty || 'medium',
+        deployBadge: raw.deploy_badge || raw.deployBadge || '',
+        deployMethod: raw.deploy_method || raw.deployMethod || '',
         hookTitle: raw.hook_title || raw.hookTitle || '',
         introText: raw.intro_text || raw.introText || '',
         warningNote: raw.warning_note || raw.warningNote || '',
@@ -864,6 +1085,19 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
         }
         if (activeTemplate) {
           params.set('template', activeTemplate);
+          params.set('templateType', activeTemplate);
+        }
+        if (activeLicense) {
+          params.set('licenseType', activeLicense);
+          params.set('license', activeLicense);
+        }
+        if (activeCost) {
+          params.set('costModel', activeCost);
+          params.set('cost', activeCost);
+        }
+        if (activeDeploy) {
+          params.set('deployDifficulty', activeDeploy);
+          params.set('deploy', activeDeploy);
         }
         if (!reset && nextCursor) {
           params.set('cursor', nextCursor);
@@ -880,12 +1114,17 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
           categoryCounts = data.byCategory;
         }
 
-        if (!activeCategory && !activeTemplate && !searchQuery.trim()) {
+        if (!activeCategory && !activeTemplate && !activeLicense && !activeCost && !activeDeploy && !searchQuery.trim()) {
           globalTotalCount = totalFilteredCount;
         }
 
         const rawList = data.items || data.repos || data.data || (Array.isArray(data) ? data : []);
-        const newItems = rawList.map(normalizeRepo).filter(Boolean);
+        let newItems = rawList.map(normalizeRepo).filter(Boolean);
+
+        // Fallback defensivo no cliente para filtragem imediata e precisa
+        if (activeLicense || activeCost || activeDeploy) {
+          newItems = newItems.filter((r) => matchesClientFilters(r));
+        }
 
         if (reset) {
           allRepos = newItems;
@@ -904,9 +1143,10 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
         }
         const filteredEl = document.getElementById('filtered-repos-count');
         if (filteredEl) {
-          filteredEl.textContent = String(totalFilteredCount);
+          filteredEl.textContent = String(totalFilteredCount || allRepos.length);
         }
 
+        updateClearFiltersButton();
         renderCategoryPills();
         renderRepoGrid();
 
@@ -940,7 +1180,11 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
       const counts = {};
       const hasBackendCounts = categoryCounts && Object.keys(categoryCounts).length > 0;
 
-      for (const cat of ALL_CATEGORIES) {
+      const knownSet = new Set(ALL_CATEGORIES);
+      const extraCategories = Object.keys(categoryCounts || {}).filter((c) => !knownSet.has(c) && (categoryCounts[c] || 0) > 0);
+      const effectiveCategories = [...ALL_CATEGORIES, ...extraCategories];
+
+      for (const cat of effectiveCategories) {
         counts[cat] = hasBackendCounts ? (Number(categoryCounts[cat]) || 0) : 0;
       }
       if (!hasBackendCounts) {
@@ -952,8 +1196,12 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
       const totalAll = globalTotalCount || totalFilteredCount || allRepos.length;
 
       const pills = [
-        { label: 'Todas as Categorias', value: '', count: totalAll },
-        ...ALL_CATEGORIES.map((c) => ({ label: c, value: c, count: counts[c] || 0 }))
+        { label: '✨ Todas as Categorias', value: '', count: totalAll },
+        ...effectiveCategories.map((c) => ({
+          label: (CATEGORY_ICONS[c] ? (CATEGORY_ICONS[c] + ' ') : '') + c,
+          value: c,
+          count: counts[c] || 0
+        }))
       ];
 
       container.innerHTML = pills.map((p) => {
@@ -963,13 +1211,14 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
           : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 border-white/10';
         return '<button type="button" data-category="' + escapeHtml(p.value) + '" class="category-pill shrink-0 px-3.5 py-1.5 rounded-full text-xs border transition flex items-center gap-1.5 cursor-pointer ' + cls + '">' +
           '<span>' + escapeHtml(p.label) + '</span>' +
-          '<span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono ' + (isActive ? 'bg-slate-950/25 text-slate-950' : 'bg-white/10 text-slate-300') + '">' + p.count + '</span>' +
+          '<span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono ' + (isActive ? 'bg-slate-950/25 text-slate-950 font-bold' : 'bg-white/10 text-slate-300') + '">' + p.count + '</span>' +
         '</button>';
       }).join('');
 
       container.querySelectorAll('.category-pill').forEach((btn) => {
         btn.addEventListener('click', () => {
           activeCategory = btn.getAttribute('data-category') || '';
+          updateClearFiltersButton();
           fetchRepos(true);
         });
       });
@@ -1000,6 +1249,19 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
             '<div class="flex flex-wrap items-center justify-between gap-1.5">' +
               '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/25">' + escapeHtml(r.category) + '</span>' +
               '<span class="px-2 py-0.5 rounded-md text-[11px] font-mono bg-white/5 text-slate-300 border border-white/10">' + escapeHtml(templateBadge) + '</span>' +
+            '</div>' +
+
+            '<!-- Ficha Técnica Badges (Licença, Custo Real, Instalação) -->' +
+            '<div class="flex flex-wrap items-center gap-1.5 pt-0.5">' +
+              '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-mono bg-slate-900/90 border border-white/10 text-slate-200" title="Licença de uso">' +
+                escapeHtml(getLicenseBadgeText(r)) +
+              '</span>' +
+              '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-mono bg-slate-900/90 border border-white/10 text-slate-200" title="Custo real de uso">' +
+                escapeHtml(getCostBadgeText(r)) +
+              '</span>' +
+              '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-mono bg-slate-900/90 border border-white/10 text-slate-200" title="Dificuldade de instalação">' +
+                escapeHtml(getDeployBadgeText(r)) +
+              '</span>' +
             '</div>' +
 
             '<div>' +
@@ -1077,6 +1339,28 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
       document.getElementById('modal-commit').textContent = '🕒 Último commit em ' + formatDatePt(repo.lastCommitAt);
       document.getElementById('modal-language').textContent = '💻 ' + (repo.language || 'Open Source');
 
+      // Ficha Técnica (4 Itens Detalhados: Licença, Custo Real, Instalação, Categoria)
+      const ftCategoryEl = document.getElementById('modal-ft-category');
+      if (ftCategoryEl) ftCategoryEl.textContent = repo.category || 'Outros';
+
+      const ftLicenseEl = document.getElementById('modal-ft-license');
+      if (ftLicenseEl) ftLicenseEl.textContent = getLicenseBadgeText(repo);
+
+      const ftLicenseTypeEl = document.getElementById('modal-ft-license-type');
+      if (ftLicenseTypeEl) ftLicenseTypeEl.textContent = getLicenseTypeText(repo);
+
+      const ftCostEl = document.getElementById('modal-ft-cost');
+      if (ftCostEl) ftCostEl.textContent = getCostBadgeText(repo);
+
+      const ftCostNotesEl = document.getElementById('modal-ft-cost-notes');
+      if (ftCostNotesEl) ftCostNotesEl.textContent = getCostDefaultNotes(repo);
+
+      const ftDeployEl = document.getElementById('modal-ft-deploy');
+      if (ftDeployEl) ftDeployEl.textContent = getDeployBadgeText(repo);
+
+      const ftDeployMethodEl = document.getElementById('modal-ft-deploy-method');
+      if (ftDeployMethodEl) ftDeployMethodEl.textContent = getDeployDefaultMethod(repo);
+
       document.getElementById('modal-features-list').innerHTML = (repo.features || [])
         .map((f) => '<li class="leading-relaxed">' + escapeHtml(f) + '</li>')
         .join('');
@@ -1142,6 +1426,13 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
           document.getElementById('exists-repo-template').textContent = TEMPLATE_LABELS[found.templateType] || found.templateType;
           document.getElementById('exists-repo-hook').textContent = found.hookTitle;
           document.getElementById('exists-repo-intro').textContent = found.introText;
+
+          const badgesEl = document.getElementById('exists-repo-badges');
+          if (badgesEl) {
+            badgesEl.innerHTML = '<span class="text-[11px] px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-200 font-mono">' + escapeHtml(getLicenseBadgeText(found)) + '</span>' +
+              '<span class="text-[11px] px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-200 font-mono">' + escapeHtml(getCostBadgeText(found)) + '</span>' +
+              '<span class="text-[11px] px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-200 font-mono">' + escapeHtml(getDeployBadgeText(found)) + '</span>';
+          }
 
           existsPanel.classList.remove('hidden');
           generatePanel.classList.add('hidden');
@@ -1246,6 +1537,14 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
           document.getElementById('exists-repo-template').textContent = TEMPLATE_LABELS[saved.templateType] || saved.templateType;
           document.getElementById('exists-repo-hook').textContent = saved.hookTitle;
           document.getElementById('exists-repo-intro').textContent = saved.introText;
+
+          const badgesEl = document.getElementById('exists-repo-badges');
+          if (badgesEl) {
+            badgesEl.innerHTML = '<span class="text-[11px] px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-200 font-mono">' + escapeHtml(getLicenseBadgeText(saved)) + '</span>' +
+              '<span class="text-[11px] px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-200 font-mono">' + escapeHtml(getCostBadgeText(saved)) + '</span>' +
+              '<span class="text-[11px] px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-200 font-mono">' + escapeHtml(getDeployBadgeText(saved)) + '</span>';
+          }
+
           document.getElementById('check-exists-panel').classList.remove('hidden');
           renderRepoGrid(saved.repoKey);
           openVisaoModal(saved);
@@ -1263,14 +1562,34 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
     // Filtros e Busca
     document.getElementById('search-input').addEventListener('input', (e) => {
       searchQuery = e.target.value || '';
+      updateClearFiltersButton();
       clearTimeout(searchDebounceTimer);
       searchDebounceTimer = setTimeout(() => {
         fetchRepos(true);
       }, 300);
     });
 
+    document.getElementById('filter-license-select').addEventListener('change', (e) => {
+      activeLicense = e.target.value || '';
+      updateClearFiltersButton();
+      fetchRepos(true);
+    });
+
+    document.getElementById('filter-cost-select').addEventListener('change', (e) => {
+      activeCost = e.target.value || '';
+      updateClearFiltersButton();
+      fetchRepos(true);
+    });
+
+    document.getElementById('filter-deploy-select').addEventListener('change', (e) => {
+      activeDeploy = e.target.value || '';
+      updateClearFiltersButton();
+      fetchRepos(true);
+    });
+
     document.getElementById('filter-template-select').addEventListener('change', (e) => {
       activeTemplate = e.target.value || '';
+      updateClearFiltersButton();
       fetchRepos(true);
     });
 
@@ -1278,6 +1597,30 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
       activeSort = e.target.value || 'recent';
       fetchRepos(true);
     });
+
+    const clearFiltersBtnEl = document.getElementById('clear-filters-btn');
+    if (clearFiltersBtnEl) {
+      clearFiltersBtnEl.addEventListener('click', () => {
+        activeCategory = '';
+        activeTemplate = '';
+        activeLicense = '';
+        activeCost = '';
+        activeDeploy = '';
+        searchQuery = '';
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchInput.value = '';
+        const licSelect = document.getElementById('filter-license-select');
+        if (licSelect) licSelect.value = '';
+        const costSelect = document.getElementById('filter-cost-select');
+        if (costSelect) costSelect.value = '';
+        const depSelect = document.getElementById('filter-deploy-select');
+        if (depSelect) depSelect.value = '';
+        const tplSelect = document.getElementById('filter-template-select');
+        if (tplSelect) tplSelect.value = '';
+        updateClearFiltersButton();
+        fetchRepos(true);
+      });
+    }
 
     // Botão de Carregar Mais
     const loadMoreBtnEl = document.getElementById('load-more-btn');
