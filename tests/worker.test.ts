@@ -1313,3 +1313,51 @@ test('11. Telegram Channel Webhook (/api/telegram-webhook)', async () => {
   assert.equal(data.cached, true);
   assert.equal(data.fullName, 'browseros-ai/BrowserOS');
 });
+
+
+test('12. Rota /admin e Verificação de Senha (/api/auth/verify)', async () => {
+  const env: Env = {
+    DB: createInMemoryD1(),
+    GITVISAO_KV: createInMemoryKV(),
+    OMNI_KEYS: createInMemoryKV(),
+    ADMIN_PASSWORD: 'admin-password-12131415',
+    PUBLIC_APP_TITLE: 'GitVisão Admin Test'
+  };
+
+  // 1. GET /admin deve retornar HTML SPA
+  const adminPageRes = await worker.fetch(
+    new Request('https://gitvisao.local/admin'),
+    env
+  );
+  assert.equal(adminPageRes.status, 200);
+  assert.ok((adminPageRes.headers.get('content-type') || '').includes('text/html'));
+  const html = await adminPageRes.text();
+  assert.ok(html.includes('admin-login-modal'));
+  assert.ok(html.includes('check-not-found-panel'));
+
+  // 2. POST /api/auth/verify com senha incorreta
+  const failRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/auth/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: 'senha-errada' })
+    }),
+    env
+  );
+  assert.equal(failRes.status, 401);
+  const failData = (await failRes.json()) as { ok: boolean; error: string };
+  assert.equal(failData.ok, false);
+
+  // 3. POST /api/auth/verify com senha correta
+  const okRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/auth/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: 'admin-password-12131415' })
+    }),
+    env
+  );
+  assert.equal(okRes.status, 200);
+  const okData = (await okRes.json()) as { ok: boolean; message: string };
+  assert.equal(okData.ok, true);
+});

@@ -124,28 +124,38 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
       </div>
 
       <div class="flex items-center gap-2 sm:gap-3">
-        <!-- Status OmniRoute + D1 -->
-        <div id="health-badge" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-900/90 border border-white/10 text-slate-300">
-          <span id="health-dot" class="w-2 h-2 rounded-full ${omnirouteActive ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}"></span>
-          <span id="health-text" class="font-mono text-[11px]">
-            ${omnirouteActive ? `OmniRoute (${modelName}) + D1` : `Modo Smart (${modelName}) + D1`}
-          </span>
-        </div>
-
-        <!-- Contador Total -->
+        <!-- Contador Total (Sempre Visível) -->
         <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-sky-500/10 border border-sky-500/30 text-sky-300">
           <span>📦</span>
           <span id="total-repos-count">0</span>
           <span class="hidden md:inline">repositórios</span>
         </div>
 
-        <!-- Botão Painel de Configuração no Próprio App (Zero CLI) -->
+        <!-- Status OmniRoute + D1 (Exclusivo Admin) -->
+        <div id="health-badge" class="hidden items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-900/90 border border-white/10 text-slate-300">
+          <span id="health-dot" class="w-2 h-2 rounded-full ${omnirouteActive ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}"></span>
+          <span id="health-text" class="font-mono text-[11px]">
+            ${omnirouteActive ? `OmniRoute (${modelName}) + D1` : `Modo Smart (${modelName}) + D1`}
+          </span>
+        </div>
+
+        <!-- Botão Painel de Configuração no Próprio App (Exclusivo Admin) -->
         <button
           id="open-settings-btn"
           type="button"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-white/15 text-white transition cursor-pointer shadow-sm"
+          class="hidden items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-white/15 text-white transition cursor-pointer shadow-sm"
         >
           <span>⚙️ Configurar IA &amp; Senha</span>
+        </button>
+
+        <!-- Botão Sair de Admin (visível quando logado) -->
+        <button
+          id="admin-logout-btn"
+          type="button"
+          class="hidden items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 transition cursor-pointer"
+          title="Encerrar sessão de administrador"
+        >
+          <span>🚪 Sair Admin</span>
         </button>
       </div>
     </div>
@@ -183,14 +193,14 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
 
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
         <div>
-          <span class="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-sky-400 mb-1">
-            ⚡ Consulta Instantânea &amp; Geração "Pega a Visão"
+          <span id="panel-tag-badge" class="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-sky-400 mb-1">
+            ⚡ Consulta Instantânea de Repositórios
           </span>
-          <h2 class="text-xl sm:text-2xl font-bold text-white">
-            Checar ou Cadastrar Repositório do GitHub
+          <h2 id="panel-heading-title" class="text-xl sm:text-2xl font-bold text-white">
+            Consultar Repositório no Catálogo
           </h2>
-          <p class="text-sm text-slate-400 mt-0.5">
-            Cole o link de um repositório. Se já estiver no banco D1, você copia na hora sem senha. Se for inédito, gere com IA!
+          <p id="panel-heading-desc" class="text-sm text-slate-400 mt-0.5">
+            Cole o link de um repositório para verificar se já existe no catálogo e copiar o resumo oficial pronto para WhatsApp.
           </p>
         </div>
       </div>
@@ -252,12 +262,23 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
             <button
               id="exists-regenerate-toggle-btn"
               type="button"
-              class="px-3 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-white/10 text-xs font-medium transition cursor-pointer"
+              class="hidden px-3 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-white/10 text-xs font-medium transition cursor-pointer"
             >
               🔄 Regerar com IA (Admin)
             </button>
           </div>
         </div>
+      </div>
+
+      <!-- Resultado quando NÃO EXISTE no catálogo (Modo Visitante) -->
+      <div id="check-not-found-panel" class="hidden mt-5 rounded-xl border border-sky-500/25 bg-slate-900/60 p-5 text-center space-y-2">
+        <div class="text-2xl">ℹ️</div>
+        <h4 class="text-sm sm:text-base font-bold text-white">
+          Repositório ainda não catalogado no acervo
+        </h4>
+        <p class="text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
+          O projeto <span id="not-found-repo-name" class="font-mono text-sky-300 font-semibold"></span> ainda não foi adicionado ao catálogo oficial. Navegue pelo catálogo abaixo para explorar mais de 170 ferramentas prontas para compartilhar!
+        </p>
       </div>
 
       <!-- Painel para GERAR RESUMO INÉDITO (ou Regerar com Admin) -->
@@ -462,7 +483,58 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
         </div>
       </div>
     </section>
+
+    <!-- Rodapé -->
+    <footer class="mt-16 pt-8 pb-4 border-t border-white/10 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p>GitVisão • Catálogo Inteligente de Repositórios GitHub para WhatsApp</p>
+      <div class="flex items-center gap-4">
+        <button id="footer-admin-btn" type="button" class="text-slate-400 hover:text-sky-300 underline transition cursor-pointer">
+          🔐 Área Administrativa
+        </button>
+        <span id="footer-admin-status" class="hidden text-emerald-400 font-semibold flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Modo Admin Ativo
+        </span>
+      </div>
+    </footer>
   </main>
+
+  <!-- Modal de Login Administrativo -->
+  <div id="admin-login-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-md rounded-2xl p-6 sm:p-7 border border-white/15 shadow-2xl space-y-5">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">🔐</span>
+          <h3 class="text-lg font-bold text-white">Acesso Administrativo</h3>
+        </div>
+        <button id="close-admin-login-btn" type="button" class="text-slate-400 hover:text-white text-sm p-1 cursor-pointer">✕</button>
+      </div>
+      <p class="text-xs text-slate-400 leading-relaxed">
+        Digite a senha de administrador para acessar o painel de cadastro de repositórios, configurações de IA e gerenciamento.
+      </p>
+      <form id="admin-login-form" class="space-y-4">
+        <div>
+          <label for="admin-login-password-input" class="block text-xs font-medium text-slate-300 mb-1">
+            🔑 Senha de Administrador
+          </label>
+          <input
+            id="admin-login-password-input"
+            type="password"
+            required
+            placeholder="Digite a senha..."
+            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white focus:outline-none focus:border-sky-400 font-mono"
+          />
+        </div>
+        <p id="admin-login-error" class="hidden text-xs text-rose-400 font-semibold"></p>
+        <button
+          id="admin-login-submit-btn"
+          type="submit"
+          class="w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 text-slate-950 font-bold text-sm shadow-lg shadow-sky-500/20 transition cursor-pointer"
+        >
+          🔓 Entrar no Painel Admin
+        </button>
+      </form>
+    </div>
+  </div>
 
   <!-- Modal "Pega a Visão" Completa + Preview WhatsApp Lado a Lado -->
   <div id="visao-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm">
@@ -725,6 +797,61 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
   </div>
 
   <script>
+    const STORAGE_ADMIN_KEY = 'gitvisao_admin_token';
+    function getAdminToken() {
+      return sessionStorage.getItem(STORAGE_ADMIN_KEY) || '';
+    }
+    function setAdminToken(token) {
+      if (token) {
+        sessionStorage.setItem(STORAGE_ADMIN_KEY, token);
+      } else {
+        sessionStorage.removeItem(STORAGE_ADMIN_KEY);
+      }
+    }
+    function isAdmin() {
+      return Boolean(getAdminToken());
+    }
+
+    function updateAdminUI() {
+      const isAuth = isAdmin();
+      const healthBadge = document.getElementById('health-badge');
+      const openSettingsBtn = document.getElementById('open-settings-btn');
+      const adminLogoutBtn = document.getElementById('admin-logout-btn');
+      const regenBtn = document.getElementById('exists-regenerate-toggle-btn');
+      const modalRegenBtn = document.getElementById('modal-regenerate-btn');
+      const footerAdminBtn = document.getElementById('footer-admin-btn');
+      const footerAdminStatus = document.getElementById('footer-admin-status');
+      const panelTagBadge = document.getElementById('panel-tag-badge');
+      const panelHeadingTitle = document.getElementById('panel-heading-title');
+      const panelHeadingDesc = document.getElementById('panel-heading-desc');
+      const firstAccessBanner = document.getElementById('first-access-banner');
+
+      if (isAuth) {
+        if (healthBadge) { healthBadge.classList.remove('hidden'); healthBadge.classList.add('flex'); }
+        if (openSettingsBtn) { openSettingsBtn.classList.remove('hidden'); openSettingsBtn.classList.add('flex'); }
+        if (adminLogoutBtn) { adminLogoutBtn.classList.remove('hidden'); adminLogoutBtn.classList.add('flex'); }
+        if (regenBtn) regenBtn.classList.remove('hidden');
+        if (modalRegenBtn) modalRegenBtn.classList.remove('hidden');
+        if (footerAdminBtn) footerAdminBtn.classList.add('hidden');
+        if (footerAdminStatus) { footerAdminStatus.classList.remove('hidden'); footerAdminStatus.classList.add('flex'); }
+        if (panelTagBadge) panelTagBadge.textContent = '🛡️ Modo Administrador Ativo • Curadoria & IA';
+        if (panelHeadingTitle) panelHeadingTitle.textContent = 'Checar ou Cadastrar com IA';
+        if (panelHeadingDesc) panelHeadingDesc.textContent = 'Cole o link de um repositório para consultar ou gerar resumo com IA para o catálogo.';
+      } else {
+        if (healthBadge) { healthBadge.classList.add('hidden'); healthBadge.classList.remove('flex'); }
+        if (openSettingsBtn) { openSettingsBtn.classList.add('hidden'); openSettingsBtn.classList.remove('flex'); }
+        if (adminLogoutBtn) { adminLogoutBtn.classList.add('hidden'); adminLogoutBtn.classList.remove('flex'); }
+        if (regenBtn) regenBtn.classList.add('hidden');
+        if (modalRegenBtn) modalRegenBtn.classList.add('hidden');
+        if (footerAdminBtn) footerAdminBtn.classList.remove('hidden');
+        if (footerAdminStatus) { footerAdminStatus.classList.add('hidden'); footerAdminStatus.classList.remove('flex'); }
+        if (firstAccessBanner) firstAccessBanner.classList.add('hidden');
+        if (panelTagBadge) panelTagBadge.textContent = '⚡ Consulta Instantânea de Repositórios';
+        if (panelHeadingTitle) panelHeadingTitle.textContent = 'Consultar Repositório no Catálogo';
+        if (panelHeadingDesc) panelHeadingDesc.textContent = 'Cole o link de um repositório para verificar se já existe no catálogo e copiar o resumo oficial pronto para WhatsApp.';
+      }
+    }
+
     const ALL_CATEGORIES = [
       'Agentes & Automação IA',
       'SaaS & CRM Self-Hosted',
@@ -1455,11 +1582,24 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
           currentCheckedRepo = null;
           forceRegenerateMode = false;
           const targetLabel = (data.parsed && data.parsed.fullName) || data.fullName || data.repoKey || rawRepo;
-          document.getElementById('generate-badge-status').textContent = '🆕 Repositório inédito no catálogo';
-          document.getElementById('generate-repo-label').textContent = targetLabel;
           existsPanel.classList.add('hidden');
-          generatePanel.classList.remove('hidden');
-          document.getElementById('admin-password-input').focus();
+
+          if (isAdmin()) {
+            document.getElementById('generate-badge-status').textContent = '🆕 Repositório inédito no catálogo';
+            document.getElementById('generate-repo-label').textContent = targetLabel;
+            generatePanel.classList.remove('hidden');
+            const notFoundEl = document.getElementById('check-not-found-panel');
+            if (notFoundEl) notFoundEl.classList.add('hidden');
+            document.getElementById('admin-password-input').value = getAdminToken();
+          } else {
+            generatePanel.classList.add('hidden');
+            const notFoundEl = document.getElementById('check-not-found-panel');
+            if (notFoundEl) {
+              const label = document.getElementById('not-found-repo-name');
+              if (label) label.textContent = targetLabel;
+              notFoundEl.classList.remove('hidden');
+            }
+          }
         }
       } catch (err) {
         showToast('Falha ao consultar a API.', 'error');
@@ -1790,7 +1930,107 @@ export function renderAppHtml(env: Partial<Env> = {}): string {
       }
     });
 
+    // Controle do Modal de Login Administrativo
+    function openAdminLoginModal() {
+      const modal = document.getElementById('admin-login-modal');
+      const err = document.getElementById('admin-login-error');
+      const pass = document.getElementById('admin-login-password-input');
+      if (err) err.classList.add('hidden');
+      if (pass) pass.value = '';
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+      if (pass) pass.focus();
+    }
+
+    function closeAdminLoginModal() {
+      const modal = document.getElementById('admin-login-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    const footerAdminBtnEl = document.getElementById('footer-admin-btn');
+    if (footerAdminBtnEl) footerAdminBtnEl.addEventListener('click', openAdminLoginModal);
+
+    const closeAdminLoginBtnEl = document.getElementById('close-admin-login-btn');
+    if (closeAdminLoginBtnEl) closeAdminLoginBtnEl.addEventListener('click', closeAdminLoginModal);
+
+    const adminLoginFormEl = document.getElementById('admin-login-form');
+    if (adminLoginFormEl) {
+      adminLoginFormEl.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const passInput = document.getElementById('admin-login-password-input');
+        const password = passInput ? passInput.value.trim() : '';
+        const errEl = document.getElementById('admin-login-error');
+        const submitBtn = document.getElementById('admin-login-submit-btn');
+
+        if (!password) {
+          if (errEl) {
+            errEl.textContent = 'Informe a senha de administrador.';
+            errEl.classList.remove('hidden');
+          }
+          return;
+        }
+
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = '⏳ Verificando...';
+        }
+
+        try {
+          const res = await fetch('/api/auth/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+          });
+          const data = await res.json();
+          if (res.ok && data.ok) {
+            setAdminToken(password);
+            closeAdminLoginModal();
+            updateAdminUI();
+            showToast('🛡️ Modo Administrador ativado com sucesso!');
+          } else {
+            if (errEl) {
+              errEl.textContent = data.error || 'Senha de administrador incorreta.';
+              errEl.classList.remove('hidden');
+            }
+          }
+        } catch {
+          if (errEl) {
+            errEl.textContent = 'Erro de comunicação ao validar senha.';
+            errEl.classList.remove('hidden');
+          }
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '🔓 Entrar no Painel Admin';
+          }
+        }
+      });
+    }
+
+    const adminLogoutBtnEl = document.getElementById('admin-logout-btn');
+    if (adminLogoutBtnEl) {
+      adminLogoutBtnEl.addEventListener('click', () => {
+        setAdminToken('');
+        updateAdminUI();
+        showToast('🚪 Sessão de administrador encerrada.');
+        if (window.location.pathname === '/admin') {
+          window.location.href = '/';
+        }
+      });
+    }
+
     // Inicialização
+    if (window.location.pathname === '/admin' || window.location.search.includes('admin=1')) {
+      if (!isAdmin()) {
+        openAdminLoginModal();
+      }
+    }
+    updateAdminUI();
     loadHealth();
     fetchRepos(true);
   </script>

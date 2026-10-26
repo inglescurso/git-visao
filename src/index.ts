@@ -87,8 +87,11 @@ export default {
     const { pathname, searchParams } = url;
 
     try {
-      // 1. Frontend SPA
-      if (request.method === 'GET' && (pathname === '/' || pathname === '/index.html')) {
+      // 1. Frontend SPA (Home pública ou rota /admin)
+      if (
+        request.method === 'GET' &&
+        (pathname === '/' || pathname === '/index.html' || pathname === '/admin')
+      ) {
         let effectiveEnv = env;
         if (env.DB) {
           try {
@@ -124,6 +127,32 @@ export default {
           publicAppTitle: settings.publicAppTitle,
           categories: CATEGORIES,
           templates: Object.values(TEMPLATE_VARIATIONS)
+        });
+      }
+
+      // 2.1. Validação de Senha de Administrador (Login na Área /admin)
+      if (request.method === 'POST' && pathname === '/api/auth/verify') {
+        let body: { password?: string } = {};
+        try {
+          body = (await request.json()) as typeof body;
+        } catch {
+          // Permite passar senha via header
+        }
+
+        const candidatePassword = extractAdminPassword(request, body.password);
+        const { settings } = await loadEffectiveContext(env);
+        const isAuthorized = await verifyAdminPassword(candidatePassword, settings.adminPassword);
+
+        if (!isAuthorized) {
+          return jsonResponse(
+            { ok: false, error: 'Senha de administrador incorreta.' },
+            401
+          );
+        }
+
+        return jsonResponse({
+          ok: true,
+          message: 'Autenticação de administrador realizada com sucesso.'
         });
       }
 
