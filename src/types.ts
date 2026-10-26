@@ -18,26 +18,9 @@ export type CategoryName =
   | 'Libs, SDKs & CLI Dev'
   | 'Outros';
 
-export type LicenseType =
-  | 'permissive'
-  | 'copyleft'
-  | 'source-available'
-  | 'unlicensed'
-  | 'unspecified';
-
-export type CostModel =
-  | 'free-local'
-  | 'byok-ai'
-  | 'byok'
-  | 'freemium'
-  | 'paid-infra'
-  | 'paid-external'
-  | 'unknown';
-
-export type DeployDifficulty =
-  | 'easy'
-  | 'medium'
-  | 'advanced';
+export type LicenseType = 'permissive' | 'copyleft' | 'source-available' | 'unlicensed' | 'unspecified';
+export type CostModel = 'free-local' | 'byok' | 'freemium' | 'paid-external' | 'unknown';
+export type DeployDifficulty = 'easy' | 'medium' | 'advanced';
 
 export interface Env {
   DB: D1Database;
@@ -74,14 +57,24 @@ export interface GitHubRepoMetadata {
   topics: string[];
   lastCommitAt: string;
   readmeExcerpt: string;
+  licenseSpdx?: string;
+  licenseType?: LicenseType;
+  licenseBadge?: string;
+  isFree?: boolean;
+  costModel?: CostModel;
+  costBadge?: string;
+  costNotes?: string;
+  deployDifficulty?: DeployDifficulty;
+  deployBadge?: string;
+  deployMethod?: string;
   license_spdx?: string;
-  license_type?: LicenseType | string;
+  license_type?: LicenseType;
   license_badge?: string;
-  is_free?: boolean | number;
-  cost_model?: CostModel | string;
+  is_free?: number;
+  cost_model?: CostModel;
   cost_badge?: string;
   cost_notes?: string;
-  deploy_difficulty?: DeployDifficulty | string;
+  deploy_difficulty?: DeployDifficulty;
   deploy_badge?: string;
   deploy_method?: string;
 }
@@ -103,24 +96,24 @@ export interface GeneratedVisaoSummary {
   summaryText: string;
   punchline: string;
   whatsappText: string;
-  licenseSpdx?: string;
-  licenseType?: LicenseType | string;
   licenseBadge?: string;
-  isFree?: boolean | number;
-  costModel?: CostModel | string;
   costBadge?: string;
   costNotes?: string;
-  deployDifficulty?: DeployDifficulty | string;
   deployBadge?: string;
   deployMethod?: string;
+  licenseSpdx?: string;
+  licenseType?: LicenseType;
+  isFree?: boolean;
+  costModel?: CostModel;
+  deployDifficulty?: DeployDifficulty;
   license_spdx?: string;
-  license_type?: LicenseType | string;
+  license_type?: LicenseType;
   license_badge?: string;
-  is_free?: boolean | number;
-  cost_model?: CostModel | string;
+  is_free?: number;
+  cost_model?: CostModel;
   cost_badge?: string;
   cost_notes?: string;
-  deploy_difficulty?: DeployDifficulty | string;
+  deploy_difficulty?: DeployDifficulty;
   deploy_badge?: string;
   deploy_method?: string;
 }
@@ -156,36 +149,4 @@ export interface RepoRecord {
   whatsapp_text: string;
   created_at: string;
   updated_at: string;
-  license_spdx?: string;
-  license_type?: LicenseType;
-  license_badge?: string;
-  is_free?: number;
-  cost_model?: CostModel;
-  cost_badge?: string;
-  cost_notes?: string;
-  deploy_difficulty?: DeployDifficulty;
-  deploy_badge?: string;
-  deploy_method?: string;
-  licenseSpdx?: string;
-  licenseType?: LicenseType;
-  licenseBadge?: string;
-  isFree?: boolean;
-  costModel?: CostModel;
-  costBadge?: string;
-  costNotes?: string;
-  deployDifficulty?: DeployDifficulty;
-  deployBadge?: string;
-  deployMethod?: string;
-}
-
-export interface RepoSearchFilters {
-  q?: string;
-  category?: string;
-  templateType?: string;
-  licenseType?: string;
-  costModel?: string;
-  deployDifficulty?: string;
-  sort?: 'recent' | 'stars' | 'name';
-  limit?: number;
-  cursor?: string;
 }

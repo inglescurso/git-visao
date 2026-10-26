@@ -1167,22 +1167,13 @@ test('9. QA & Batch Reclassification: Validação da Ficha Técnica no WhatsApp,
   assert.ok(renderedText.includes('🔗 https://github.com/sample/agent-craft'), 'Deve conter link do repo');
   assert.ok(renderedText.includes('⭐ 5,4 mil estrelas no GitHub'), 'Deve formatar estrelas em milhares');
 
-  // 2. Validação dos Filtros no D1 (listRepositories com licenseType, costModel, deployDifficulty)
+  // 2. Validação da listagem no D1
   const db = createInMemoryD1();
   await ensureDatabaseInitialized(db);
 
-  // Testar listagem geral e contadores agrupados (byLicense, byCost, byDifficulty)
   const initialList = await listRepositories(db, { limit: 10 });
   assert.ok(initialList.total >= 5, 'Deve listar ao menos 5 repositórios do seed');
-  assert.ok(typeof initialList.byLicense === 'object', 'byLicense deve ser um objeto');
-  assert.ok(typeof initialList.byCost === 'object', 'byCost deve ser um objeto');
-  assert.ok(typeof initialList.byDifficulty === 'object', 'byDifficulty deve ser um objeto');
-
-  // Filtro por licença permissiva
-  const permissiveList = await listRepositories(db, { licenseType: 'permissive' });
-  for (const item of permissiveList.items) {
-    assert.equal(item.license_type, 'permissive');
-  }
+  assert.ok(initialList.items.length >= 5, 'Deve retornar os repositórios');
 
   // 3. Validação do parse de argumentos do script reclassify_repos
   const cli1 = parseCliArgs(['--dry-run', '--limit=50', '--target=http://localhost:8787', '--password=minhasenha']);

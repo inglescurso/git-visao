@@ -1,23 +1,4 @@
-import type { GitHubRepoMetadata } from './types.ts';
-
-declare module './types.ts' {
-  interface GitHubRepoMetadata {
-    licenseSpdx?: string;
-    licenseType?: 'permissive' | 'copyleft' | 'source-available' | 'unlicensed';
-    licenseBadge?: string;
-    isFree?: boolean;
-    costModel?: 'free-local' | 'byok' | 'freemium' | 'paid-external';
-    costBadge?: string;
-    costNotes?: string;
-    deployDifficulty?: 'easy' | 'medium' | 'advanced';
-    deployBadge?: string;
-    deployMethod?: string;
-  }
-}
-
-export type LicenseType = 'permissive' | 'copyleft' | 'source-available' | 'unlicensed';
-export type DeployDifficulty = 'easy' | 'medium' | 'advanced';
-export type CostModel = 'free-local' | 'byok' | 'freemium' | 'paid-external';
+import type { CostModel, DeployDifficulty, GitHubRepoMetadata, LicenseType } from './types.ts';
 
 export interface LicenseClassification {
   licenseSpdx: string;
