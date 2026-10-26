@@ -1,0 +1,169 @@
+{
+  "name": "GitVisão - Ingestão Telegram Repositórios",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "channel_post",
+          "edited_channel_post",
+          "message",
+          "edited_message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "9a12c410-b1d5-45a8-9a3c-1b7f0e918231",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -680,
+        200
+      ],
+      "webhookId": "gitvisao-telegram-ingest-trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extrai repositórios do GitHub de mensagens, legendas e hiperlinks do Telegram\nconst items = [];\nconst incoming = $input.all();\n\nfor (const item of incoming) {\n  const data = item.json;\n  const msg = data.channel_post || data.message || data.edited_channel_post || data;\n  const rawText = msg.text || msg.caption || data.text || '';\n  const entities = msg.entities || msg.caption_entities || [];\n\n  const foundUrls = [];\n\n  // 1. Extrair de hiperlinks nas entidades (formatação markdown)\n  for (const entity of entities) {\n    if (entity.type === 'text_link' && entity.url) {\n      foundUrls.push(entity.url);\n    }\n  }\n\n  // 2. Extrair URLs do GitHub do texto puro\n  const githubRegex = /(?:https?:\\/\\/)?(?:www\\.)?github\\.com\\/([a-zA-Z0-9._-]+)\\/([a-zA-Z0-9._-]+)/gi;\n  let match;\n  while ((match = githubRegex.exec(rawText)) !== null) {\n    const owner = match[1];\n    const repo = match[2].replace(/\\.git$/i, '');\n    foundUrls.push(`https://github.com/${owner}/${repo}`);\n  }\n\n  for (const u of foundUrls) {\n    const m = /(?:https?:\\/\\/)?(?:www\\.)?github\\.com\\/([a-zA-Z0-9._-]+)\\/([a-zA-Z0-9._-]+)/i.exec(u);\n    if (m) {\n      foundUrls.push(`https://github.com/${m[1]}/${m[2].replace(/\\.git$/i, '')}`);\n    }\n  }\n\n  // 3. Deduplicar na mesma mensagem\n  const uniqueRepos = [...new Set(foundUrls.filter(u => u.includes('github.com/')))];\n\n  for (const repo of uniqueRepos) {\n    items.push({\n      json: {\n        repo: repo,\n        text: rawText,\n        source: 'telegram',\n        chat_id: msg.chat ? msg.chat.id : null,\n        message_id: msg.message_id || null,\n        sender: msg.from ? (msg.from.username || msg.from.first_name) : (msg.chat ? msg.chat.title : 'Telegram')\n      }\n    });\n  }\n}\n\nreturn items;"
+      },
+      "id": "771e84a2-9721-4f11-bdfc-4cb5038c7ef6",
+      "name": "Code - Extrair GitHub",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -440,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://vision.24hs.eu.org/api/webhook",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-API-Key",
+              "value": "12131415"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"repo\": \"{{ $json.repo }}\",\n  \"text\": \"{{ $json.text }}\"\n}",
+        "options": {}
+      },
+      "id": "d1645e90-c241-4775-8121-758cf1930219",
+      "name": "HTTP - GitVisão Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -200,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-response",
+              "leftValue": "={{ $json.whatsappText || $json.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e031ca31-7b3b-4c55-9a4d-0805128cfb74",
+      "name": "Tem Resposta GitVisão?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        40,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Code - Extrair GitHub').item.json.chat_id }}",
+        "text": "=🚀 *GitVisão Processado com Sucesso!*\n\n📦 *Repo:* `{{ $('Code - Extrair GitHub').item.json.repo }}`\n\n💡 *Resumo:*\n{{ $json.whatsappText || $json.message || 'Repositório indexado no GitVisão!' }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "reply_to_message_id": "={{ $('Code - Extrair GitHub').item.json.message_id }}"
+        }
+      },
+      "id": "a904d920-f421-4f81-8152-cb1235129999",
+      "name": "Telegram - Responder no Chat",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        280,
+        180
+      ]
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code - Extrair GitHub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Extrair GitHub": {
+      "main": [
+        [
+          {
+            "node": "HTTP - GitVisão Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - GitVisão Webhook": {
+      "main": [
+        [
+          {
+            "node": "Tem Resposta GitVisão?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem Resposta GitVisão?": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Responder no Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
