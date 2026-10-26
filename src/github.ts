@@ -33,37 +33,50 @@ export function parseGitHubRepoInput(input: string): ParsedGitHubRepo | null {
   let cleaned = input.trim();
   if (!cleaned) return null;
 
-  // Remove URL protocol and domain if present
+  const validSegment = /^[a-zA-Z0-9._-]+$/;
+
+  // 1. Extração por regex inteligente (suporta links soltos dentro de mensagens de bots/chats)
+  const urlMatch = cleaned.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9._-]+)\/([a-zA-Z0-9._-]+)/i);
+  if (urlMatch) {
+    const owner = urlMatch[1].trim();
+    const rawName = urlMatch[2].trim().replace(/\.git$/i, '');
+    if (owner && rawName && validSegment.test(owner) && validSegment.test(rawName)) {
+      const fullName = `${owner}/${rawName}`;
+      return {
+        owner,
+        name: rawName,
+        repoKey: fullName.toLowerCase(),
+        fullName,
+        repoUrl: `https://github.com/${fullName}`
+      };
+    }
+  }
+
+  // 2. Extração tradicional para formato direto "owner/repo"
   cleaned = cleaned
     .replace(/^https?:\/\/(www\.)?github\.com\//i, '')
     .replace(/^github\.com\//i, '')
     .replace(/^\/+/, '');
 
-  // Strip query string and hash
   cleaned = cleaned.split('?')[0].split('#')[0];
 
   const parts = cleaned.split('/').filter(Boolean);
-  if (parts.length < 2) return null;
-
-  const owner = parts[0].trim();
-  const rawName = parts[1].trim().replace(/\.git$/i, '');
-
-  const validSegment = /^[a-zA-Z0-9._-]+$/;
-  if (!owner || !rawName || !validSegment.test(owner) || !validSegment.test(rawName)) {
-    return null;
+  if (parts.length >= 2) {
+    const owner = parts[0].trim();
+    const rawName = parts[1].trim().replace(/\.git$/i, '');
+    if (owner && rawName && validSegment.test(owner) && validSegment.test(rawName)) {
+      const fullName = `${owner}/${rawName}`;
+      return {
+        owner,
+        name: rawName,
+        repoKey: fullName.toLowerCase(),
+        fullName,
+        repoUrl: `https://github.com/${fullName}`
+      };
+    }
   }
 
-  const fullName = `${owner}/${rawName}`;
-  const repoKey = fullName.toLowerCase();
-  const repoUrl = `https://github.com/${fullName}`;
-
-  return {
-    owner,
-    name: rawName,
-    repoKey,
-    fullName,
-    repoUrl
-  };
+  return null;
 }
 
 function decodeBase64Utf8(base64: string): string {

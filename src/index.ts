@@ -317,11 +317,73 @@ export default {
         });
       }
 
-      // 7. Register / Summarize Repository
-      if (request.method === 'POST' && pathname === '/api/repos') {
+      // 7.0. Telegram Webhook Nativo (para canal https://t.me/mundoautomatik ou bots)
+      if (request.method === 'POST' && pathname === '/api/telegram-webhook') {
+        let update: any = {};
+        try {
+          update = await request.json();
+        } catch {
+          return jsonResponse({ ok: false, error: 'Payload JSON inválido.' }, 400);
+        }
+
+        const msg = update.channel_post || update.message || update.edited_channel_post;
+        if (!msg) {
+          return jsonResponse({ ok: true, ignored: true, message: 'Nenhum post/mensagem recebida no update.' });
+        }
+
+        let rawText = (typeof msg.text === 'string' ? msg.text : '') || (typeof msg.caption === 'string' ? msg.caption : '');
+        const entities = Array.isArray(msg.entities) ? msg.entities : Array.isArray(msg.caption_entities) ? msg.caption_entities : [];
+        for (const ent of entities) {
+          if (ent && ent.type === 'text_link' && typeof ent.url === 'string') {
+            rawText += ` ${ent.url}`;
+          }
+        }
+
+        const parsed = safeParseRepo(rawText);
+        if (!parsed) {
+          return jsonResponse({ ok: true, ignored: true, message: 'Nenhum repositório do GitHub identificado no post.' });
+        }
+
+        const { effectiveEnv } = await loadEffectiveContext(env);
+        const existing = await findRepoByKey(env.DB, parsed.repoKey, env);
+        let saved = existing;
+
+        if (!existing) {
+          const meta = await fetchGitHubRepoMetadata(parsed.fullName, effectiveEnv.GITHUB_TOKEN);
+          const summary = await generateRepoVisaoSummary(meta, effectiveEnv);
+          saved = await upsertRepository(env.DB, meta, summary, env);
+        }
+
+        const originUrl = url.origin || 'https://vision.24hs.eu.org';
+        const catalogUrl = `${originUrl}/?q=${encodeURIComponent(parsed.fullName)}`;
+        const resAny = saved as any;
+
+        return jsonResponse({
+          ok: true,
+          cached: Boolean(existing),
+          message: existing ? 'Repositório já existia no catálogo.' : 'Novo repositório catalogado com sucesso via Telegram!',
+          fullName: saved.fullName || resAny.full_name,
+          catalogUrl,
+          whatsappText: resAny.whatsappText || resAny.whatsapp_text || '',
+          repo: saved
+        });
+      }
+
+      // 7. Register / Summarize Repository (Porta de Entrada Pública & Webhooks para Bots)
+      if (
+        request.method === 'POST' &&
+        (pathname === '/api/repos' || pathname === '/api/webhook' || pathname === '/api/ingest')
+      ) {
         let body: {
           repo?: string;
+          url?: string;
+          link?: string;
+          text?: string;
+          message?: string;
           password?: string;
+          token?: string;
+          apiKey?: string;
+          key?: string;
           templateType?: TemplateType;
           force?: boolean;
         } = {};
@@ -335,14 +397,22 @@ export default {
           );
         }
 
-        const rawRepo = body.repo || '';
+        const rawRepo =
+          body.repo ||
+          body.url ||
+          body.link ||
+          body.text ||
+          body.message ||
+          searchParams.get('repo') ||
+          searchParams.get('url') ||
+          '';
         const parsed = safeParseRepo(rawRepo);
         if (!parsed) {
           return jsonResponse(
             {
               ok: false,
               error:
-                'Repositório inválido. Use o formato owner/repo ou a URL completa do GitHub.'
+                'Repositório ou link do GitHub não encontrado. Envie um formato válido (ex: owner/repo, https://github.com/owner/repo ou mensagem contendo o link).'
             },
             400
           );
@@ -350,19 +420,39 @@ export default {
 
         const { settings, effectiveEnv } = await loadEffectiveContext(env);
         const existing = await findRepoByKey(env.DB, parsed.repoKey, env);
+        const originUrl = url.origin || 'https://vision.24hs.eu.org';
+        const catalogUrl = `${originUrl}/?q=${encodeURIComponent(parsed.fullName)}`;
 
-        // If already cataloged in D1 and not forcing regeneration, return immediately without requiring password
+        // Se já cadastrado no D1 e não está forçando regeração, retorna cache imediatamente (não precisa de senha)
         if (existing && !body.force) {
+          const exAny = existing as any;
+          const whatsappText = exAny.whatsappText || exAny.whatsapp_text || '';
+          const hookTitle = exAny.hookTitle || exAny.hook_title || '';
+          const licenseBadge = exAny.licenseBadge || exAny.license_badge || 'Open Source';
+          const costBadge = exAny.costBadge || exAny.cost_badge || '100% Grátis';
+          const deployBadge = exAny.deployBadge || exAny.deploy_badge || 'Fácil';
+
           return jsonResponse({
             ok: true,
             cached: true,
             message: 'Repositório já cadastrado no catálogo!',
+            fullName: existing.fullName || exAny.full_name,
+            repoKey: existing.repoKey || exAny.repo_key,
+            catalogUrl,
+            whatsappText,
+            hookTitle,
+            category: existing.category,
+            stars: existing.stars,
+            licenseBadge,
+            costBadge,
+            deployBadge,
             repo: existing
           });
         }
 
-        // New repository or forced regeneration requires Admin Password
-        const providedPassword = extractAdminPassword(request, body.password);
+        // Repositório inédito ou regeração forçada requer autenticação (Senha/Token/API Key)
+        const candidateSecret = body.password || body.token || body.apiKey || body.key;
+        const providedPassword = extractAdminPassword(request, candidateSecret);
         const isAuthorized = await verifyAdminPassword(
           providedPassword,
           settings.adminPassword
@@ -373,7 +463,7 @@ export default {
               ok: false,
               requiresPassword: true,
               error:
-                'Senha de administrador inválida ou ausente. Para cadastrar um novo repositório ou regerar resumo via IA, informe a senha correta.'
+                'Senha de administrador ou API Key inválida/ausente. Passe no Header (Authorization: Bearer <senha>, X-API-Key ou X-Admin-Password), no corpo JSON ou na URL (?key=<senha>).'
             },
             401
           );
@@ -394,6 +484,16 @@ export default {
           ok: true,
           cached: false,
           message: 'Repositório catalogado e resumido com sucesso!',
+          fullName: saved.fullName,
+          repoKey: saved.repoKey,
+          catalogUrl,
+          whatsappText: saved.whatsappText,
+          hookTitle: saved.hookTitle,
+          category: saved.category,
+          stars: saved.stars,
+          licenseBadge: saved.licenseBadge,
+          costBadge: saved.costBadge,
+          deployBadge: saved.deployBadge,
           repo: saved
         });
       }

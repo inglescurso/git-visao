@@ -1209,4 +1209,107 @@ test('9. QA & Batch Reclassification: Validação da Ficha Técnica no WhatsApp,
   }
 });
 
+test('10. Porta de Entrada Pública & Webhooks para Bots (/api/webhook, /api/ingest, extração de texto e autenticação flexível)', async () => {
+  const env: Env = {
+    DB: createInMemoryD1(),
+    GITVISAO_KV: createInMemoryKV(),
+    OMNI_KEYS: createInMemoryKV(),
+    ADMIN_PASSWORD: 'senha-bot-secreta',
+    PUBLIC_APP_TITLE: 'GitVisão Bot API'
+  };
 
+  // 1. Extração de link do GitHub solto dentro de mensagem de chat
+  const msgFromChat = 'Galera, recomendo muito dar uma olhada neste projeto: https://github.com/browseros-ai/BrowserOS - muito rápido!';
+  const parsedFromMsg = parseGitHubRepoInput(msgFromChat);
+  assert.ok(parsedFromMsg);
+  assert.equal(parsedFromMsg.fullName, 'browseros-ai/BrowserOS');
+  assert.equal(parsedFromMsg.repoKey, 'browseros-ai/browseros');
+
+  // 2. Chamada via POST /api/webhook com payload flexível { text: ... } para repo existente
+  const webhookRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/webhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: msgFromChat })
+    }),
+    env
+  );
+  assert.equal(webhookRes.status, 200);
+  const webhookData = (await webhookRes.json()) as {
+    ok: boolean;
+    cached: boolean;
+    fullName: string;
+    catalogUrl: string;
+    whatsappText: string;
+  };
+  assert.equal(webhookData.ok, true);
+  assert.equal(webhookData.cached, true);
+  assert.equal(webhookData.fullName, 'browseros-ai/BrowserOS');
+  assert.ok(webhookData.whatsappText.length > 50);
+  assert.ok(webhookData.catalogUrl.includes('browseros-ai%2FBrowserOS'));
+
+  // 3. Chamada via POST /api/ingest com query param ?key=... e payload { url: ... }
+  const ingestQueryRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/ingest?key=senha-bot-secreta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: 'https://github.com/ArnasDon/wacrm' })
+    }),
+    env
+  );
+  assert.equal(ingestQueryRes.status, 200);
+  const ingestQueryData = (await ingestQueryRes.json()) as { ok: boolean; cached: boolean; fullName: string };
+  assert.equal(ingestQueryData.ok, true);
+  assert.equal(ingestQueryData.fullName, 'ArnasDon/wacrm');
+
+  // 4. Chamada com Header X-API-Key
+  const apiKeyRes = await worker.fetch(
+    new Request('https://gitvisao.local/api/repos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': 'senha-bot-secreta'
+      },
+      body: JSON.stringify({ repo: 'ArnasDon/wacrm' })
+    }),
+    env
+  );
+  assert.equal(apiKeyRes.status, 200);
+  const apiKeyData = (await apiKeyRes.json()) as { ok: boolean; cached: boolean };
+  assert.equal(apiKeyData.ok, true);
+});
+
+test('11. Telegram Channel Webhook (/api/telegram-webhook)', async () => {
+  const env: Env = {
+    DB: createInMemoryD1(),
+    GITVISAO_KV: createInMemoryKV(),
+    OMNI_KEYS: createInMemoryKV(),
+    ADMIN_PASSWORD: 'admin-password',
+    PUBLIC_APP_TITLE: 'GitVisão Telegram Bot'
+  };
+
+  const telegramPayload = {
+    update_id: 10001,
+    channel_post: {
+      message_id: 4180,
+      chat: { id: -1001234567890, title: 'Mundo Automatik', type: 'channel' },
+      date: 1729960000,
+      text: 'Confira este incrível repositório de automação de agentes: https://github.com/browseros-ai/BrowserOS vale a pena testar!'
+    }
+  };
+
+  const res = await worker.fetch(
+    new Request('https://gitvisao.local/api/telegram-webhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(telegramPayload)
+    }),
+    env
+  );
+
+  assert.equal(res.status, 200);
+  const data = (await res.json()) as { ok: boolean; cached: boolean; fullName: string };
+  assert.equal(data.ok, true);
+  assert.equal(data.cached, true);
+  assert.equal(data.fullName, 'browseros-ai/BrowserOS');
+});

@@ -1,9 +1,14 @@
 export function extractAdminPassword(request: Request, bodyPassword?: string): string {
-  const headerPassword = request.headers.get('x-admin-password');
+  // 1. Headers comuns de autenticação (X-Admin-Password, X-API-Key)
+  const headerPassword =
+    request.headers.get('x-admin-password') ||
+    request.headers.get('x-api-key') ||
+    request.headers.get('api-key');
   if (headerPassword && headerPassword.trim()) {
     return headerPassword.trim();
   }
 
+  // 2. Authorization: Bearer <token>
   const authHeader = request.headers.get('authorization');
   if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
     const token = authHeader.slice(7).trim();
@@ -12,15 +17,22 @@ export function extractAdminPassword(request: Request, bodyPassword?: string): s
     }
   }
 
+  // 3. Body JSON (password, token, apiKey, key)
   if (typeof bodyPassword === 'string' && bodyPassword.trim()) {
     return bodyPassword.trim();
   }
 
+  // 4. Query Params da URL (?password=..., ?key=..., ?token=..., ?apiKey=...)
   try {
     const url = new URL(request.url);
-    const queryPassword = url.searchParams.get('password');
-    if (queryPassword && queryPassword.trim()) {
-      return queryPassword.trim();
+    const queryCandidate =
+      url.searchParams.get('password') ||
+      url.searchParams.get('key') ||
+      url.searchParams.get('token') ||
+      url.searchParams.get('apiKey') ||
+      url.searchParams.get('api_key');
+    if (queryCandidate && queryCandidate.trim()) {
+      return queryCandidate.trim();
     }
   } catch {
     // ignore invalid URL
