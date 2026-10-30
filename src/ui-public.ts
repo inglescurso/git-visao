@@ -194,7 +194,7 @@ const PUBLIC_TEMPLATE = `<!DOCTYPE html>
   <script>
     var CATEGORIES = ['Agentes & Automação IA','SaaS & CRM Self-Hosted','Infra, Gateways & Edge','Terminal, CLI & DX','Frontend & UI Components','Scrapers & Engenharia de Dados','Cibersegurança & Pentest','Apps & Produtividade','Backend, Bancos & Storage','Outros'];
     var allRepos = [], nextCursor = null, hasMore = false, totalCount = 0, globalTotal = 0, categoryCounts = {};
-    var isLoading = false, activeCategory = '', activeLicense = '', activeCost = '', activeDeploy = '', activeSort = 'recent', searchQuery = '';
+    var isLoading = false, reposRequestId = 0, reposController = null, activeCategory = '', activeLicense = '', activeCost = '', activeDeploy = '', activeSort = 'recent', searchQuery = '';
     var currentRepo = null, searchTimer = null;
 
     function $(id) { return document.getElementById(id); }
@@ -271,7 +271,11 @@ const PUBLIC_TEMPLATE = `<!DOCTYPE html>
     function updateClear() { $('clear-filters-btn').classList.toggle('hidden', !hasFilters()); }
 
     function fetchRepos(reset) {
-      if (isLoading) return Promise.resolve();
+      if (!reset && isLoading) return Promise.resolve();
+      if (reset && reposController) reposController.abort();
+      var requestId = ++reposRequestId;
+      var controller = new AbortController();
+      reposController = controller;
       isLoading = true;
       if (reset) { nextCursor = null; allRepos = []; $('repos-loading').classList.remove('hidden'); $('repos-empty').classList.add('hidden'); $('load-more-btn').classList.add('hidden'); }
       var p = new URLSearchParams();
@@ -279,7 +283,11 @@ const PUBLIC_TEMPLATE = `<!DOCTYPE html>
       if (searchQuery.trim()) p.set('q', searchQuery.trim());
       if (activeCategory) p.set('category', activeCategory);
       if (!reset && nextCursor) p.set('cursor', nextCursor);
-      return fetch('/api/repos?' + p.toString()).then(function (res) { return res.json(); }).then(function (data) {
+      return fetch('/api/repos?' + p.toString(), { signal: controller.signal }).then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      }).then(function (data) {
+        if (requestId !== reposRequestId) return;
         nextCursor = data.nextCursor || null; hasMore = !!data.hasMore; totalCount = Number(data.total || 0);
         if (data.byCategory && typeof data.byCategory === 'object') categoryCounts = data.byCategory;
         if (!hasFilters()) globalTotal = totalCount;
@@ -290,8 +298,12 @@ const PUBLIC_TEMPLATE = `<!DOCTYPE html>
         $('filtered-repos-count').textContent = String(totalCount || allRepos.length);
         updateClear(); renderPills(); renderGrid('');
         $('load-more-btn').classList.toggle('hidden', !(hasMore && nextCursor));
-      }).catch(function () { toast('Erro ao carregar repositórios.', 'error'); }).then(function () {
-        isLoading = false; $('repos-loading').classList.add('hidden');
+      }).catch(function (error) {
+        if (requestId === reposRequestId && error.name !== 'AbortError') toast('Erro ao carregar repositórios.', 'error');
+      }).then(function () {
+        if (requestId === reposRequestId) {
+          isLoading = false; reposController = null; $('repos-loading').classList.add('hidden');
+        }
       });
     }
 

@@ -434,6 +434,7 @@ export async function listRepositories(
     baseWhereClauses.push(
       `(
         LOWER(full_name) LIKE ? OR
+        LOWER(language) LIKE ? OR
         LOWER(description) LIKE ? OR
         LOWER(hook_title) LIKE ? OR
         LOWER(intro_text) LIKE ? OR
@@ -442,7 +443,7 @@ export async function listRepositories(
         LOWER(topics_json) LIKE ?
       )`
     );
-    baseParams.push(q, q, q, q, q, q, q);
+    baseParams.push(q, q, q, q, q, q, q, q);
   }
 
   if (
